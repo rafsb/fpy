@@ -1,0 +1,13 @@
+{
+    "HEADER"        : "#FF5533"
+    , "HEADER_1"    : "#FF5533"
+    , "HEADER_2"    : "#ff8300"
+    , "FOREGROUND"  : "#FFFFFF"
+    , "BACKGROUND"  : "#e3e3e3"
+    , "FONT"        : "#000000"
+    , "FONTBLURED"  : "#BEBCBD"
+    , "SPAN"        : "#ffd200"
+    , "DISABLED"    : "#FF5533"
+    , "type"        : "light"
+    , "theme_name"  : "sunburn"
+}

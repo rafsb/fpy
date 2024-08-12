@@ -1,0 +1,27 @@
+<template>
+    <!-- HOME -->
+    <main class="wrap">
+        <div class="wrap flex">
+            <nav class="col-3 pv4 pl4">
+                <div
+                    id="main-menu"
+                    class="wrap blur"
+                    style="border-radius: 1em 0 0 1em;background: {{font}}44;color:{{foreground}};border:1px solid {{foreground}}44"
+                ></div>
+            </nav>
+            <div class="col-9 pv4 pr4">
+                <div
+                    id="main-stage"
+                    class="wrap blur"
+                    style="border-radius: 0 1em 1em 0;background: {{foreground}}44"
+                ></div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        fw.load("views/components/menu.htm", { target: $("#main-menu")[0] })
+        bootloader.ready('home')
+        setTimeout(_ => bootloader.ready('ready'), AL * 2)
+    </script>
+</template>

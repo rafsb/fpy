@@ -1,0 +1,13 @@
+{
+    "HEADER"        : "#27283D"
+    , "HEADER_1"    : "#27283D"
+    , "HEADER_2"    : "#383C59"
+    , "FOREGROUND"  : "#FFFFFF"
+    , "BACKGROUND"  : "#c3c3c3"
+    , "FONT"        : "#121212"
+    , "FONTBLURED"  : "#BEBCBD"
+    , "SPAN"        : "#585C79"
+    , "DISABLED"    : "#C74E39"
+    , "type"        : "light"
+    , "theme_name"  : "light"
+}

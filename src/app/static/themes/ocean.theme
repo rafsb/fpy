@@ -1,0 +1,13 @@
+{
+    "HEADER"        : "#2C97DD"
+    , "HEADER_1"    : "#2C97DD"
+    , "HEADER_2"    : "#0abab5"
+    , "FOREGROUND"  : "#FFFFFF"
+    , "BACKGROUND"  : "#c0D2D8"
+    , "FONT"        : "#424242"
+    , "FONTBLURED"  : "#9EbC9D"
+    , "SPAN"        : "#83e3e3"
+    , "DISABLED"    : "#C74E39"
+    , "type"        : "light"
+    , "theme_name"  : "ocean"
+}

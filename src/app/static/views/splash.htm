@@ -1,0 +1,44 @@
+<template>
+    <div id="splash" class="fixed view zero blur" style="
+        z-index:10000;
+        background: {{header}}22;
+    ">
+        <div class="abs zbr">
+            <div class="rel -splash-stage"></div>
+        </div>
+    </div>
+    <script>
+        get(`img/spin.svg`, res => {
+            res = res.morph()[0]
+            res.$(`path`).forEach((p, i) => p.css({ stroke: '{{header}}', fill: '{{header}}', "stroke-width": 1 }))
+            $(`#splash .-splash-stage`)[0].app(DIV(`-logo`, {
+                padding: '2em 4em'
+                , pointerEvents: `none`
+            }).app(res)).$('svg').css({
+                maxHeight: '4em'
+                , maxWidth: '4em'
+            })
+        })
+
+        window.loading = {
+            status: false
+            , on: _ => {
+                if(window.loading.status) return
+                window.loading.status = true
+                clearInterval(window.loading.schedule)
+                $('#splash').appear()
+            }
+            , off: _ => {
+                if(!window.loading.status) return
+                window.loading.status = false
+                window.loading.schedule = setTimeout(_ => $('#splash').disappear(), AL)
+            }
+        }
+
+        bootloader.onFinishLoading.add(window.loading.off)
+        setTimeout(_ => bootloader.ready('splash'), AL)
+
+        window.loading.on()
+    </script>
+
+</template>

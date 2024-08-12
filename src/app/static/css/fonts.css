@@ -1,0 +1,70 @@
+/* FONTS */
+
+@font-face {
+  font-family: 'Source Sans';
+  src: url(../fonts/source.woff2) format('woff2');
+}
+/* @import url('https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,600,900&display=swap'); */
+.sourcesans-light  { font-family: 'Source Sans', sans-serif; font-weight: 300; }
+.sourcesans		     { font-family: 'Source Sans', sans-serif; font-weight: 600;}
+.sourcesans-bold   { font-family: 'Source Sans', sans-serif; font-weight: 900; }
+
+/* @font-face {
+  font-family: 'Roboto Mono', monospace;
+  src: url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@100;300;400;700&display=swap');
+}
+.roboto-mono-thin  { font-family: 'Roboto Mono', sans-serif; font-weight: 100; }
+.roboto-mono-light { font-family: 'Roboto Mono', sans-serif; font-weight: 300; }
+.roboto-mono       { font-family: 'Roboto Mono', sans-serif; font-weight: 400;}
+.roboto-mono-bold  { font-family: 'Roboto Mono', sans-serif; font-weight: 700; }
+.roboto-mono-black { font-family: 'Roboto Mono', sans-serif; font-weight: 700; } */
+
+@font-face {
+  font-family: 'Roboto';
+  src: url(../fonts/roboto.woff2) format('woff2');
+}
+/* @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&family=Ubuntu:wght@300;400;500;700&display=swap'); */
+.roboto-thin  { font-family: 'Roboto', sans-serif; font-weight: 100; }
+.roboto-light { font-family: 'Roboto', sans-serif; font-weight: 300; }
+.roboto       { font-family: 'Roboto', sans-serif; font-weight: 500; }
+.roboto-bold  { font-family: 'Roboto', sans-serif; font-weight: 700; }
+.roboto-black { font-family: 'Roboto', sans-serif; font-weight: 700; }
+
+/* fallback */
+@font-face {
+    font-family: 'Material Symbols Outlined';
+    font-style: normal;
+    font-weight: 400;
+    /* src: url(https://fonts.gstatic.com/s/materialsymbolsoutlined/v146/kJF1BvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rA6RzaxHMPdY43zj-jCxv3fzvRNU22ZXGJpEpjC_1v-p_4MrImHCIJIZrDCvHOej.woff2) format('woff2'); */
+    src: url(../fonts/symbols.woff2) format('woff2');
+  }
+
+  .material-symbols-outlined,.icon {
+    font-family: 'Material Symbols Outlined';
+    /* font-weight: normal;
+    font-style: normal;
+    font-size: 1.5em;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    pointer-events: none;
+    padding:0;
+    margin:0; */
+    overflow: hidden;
+  }
+  .icon {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24
+}
+
+.ft-thin,.thin 	     { font-weight: 100; }
+.ft-light,.light     { font-weight: 200; }
+.ft-regular,.regular { font-weight: 400; }
+.ft-bold,.bold 	     { font-weight: 700; }
+.ft-black 	         { font-weight: 900; }
+
+  /* https://fonts.google.com/icons?selected=Material+Symbols+Outlined:home:FILL@0;wght@400;GRAD@0;opsz@24&query=icons */

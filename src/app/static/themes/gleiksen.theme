@@ -1,0 +1,12 @@
+{
+    "FOREGROUND"    : "#2F0F15"
+    , "BACKGROUND"  : "#4F2F35"
+    , "FONT"        : "#FFEFD5"
+    , "FONTBLURED"  : "#BEBCBD"
+    , "SPAN"        : "#00FF00"
+    , "DISABLED"    : "#BDC3C8"
+    , "HEADER"      : "#9F7F85"
+    , "HEADER_1"    : "#9F7F85"
+    , "HEADER_2"    : "#bF9Fa5"
+    , "type"        : "light"
+}

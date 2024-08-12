@@ -1,0 +1,1 @@
+.\venv\Scripts\waitress-serve.exe --port=7000 app:app 
