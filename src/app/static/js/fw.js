@@ -44,13 +44,13 @@ DEBUG = false
 , DIV = (c, s, t) => TAG("div", c, s, t)
 , WRAP = (h, c, s) => DIV((c || "") + " wrap", s)[h instanceof Object || h instanceof Array ? 'app' : 'html'](h || "")
 , IMG = (path = "img/spin.svg", cls=null, css = {}) => TAG("img", cls, css).attr({ src: path, role: "img" })
-, SVG = (t="svg", c=null, a={ focusable: "false" }, s={}) => {
+, SVG = (config={}) => {
     const
-    node = document.createElementNS("http://www.w3.org/2000/svg", t)
-        .addClass(c)
-        .attr(a || {})
-        .css(s || {})
-        .html(t == "svg" ? "<defs></defs>" : "")
+    node = document.createElementNS("http://www.w3.org/2000/svg", config.tag || 'svg')
+        .addClass(config.class || 'fwchart')
+        .attr(config.attr || {})
+        .css(config.css || {})
+        .html((config.tag || 'svg') == 'svg' ? '<defs></defs>' : '')
     ;;
     node.attr = function(o, ns) {
         if(o) {
@@ -61,12 +61,13 @@ DEBUG = false
     }
     return node
 }
-, SPATH = (d, c, a, s) => SVG("path", c, blend({ d: d }, a), s)
+, SPATH = (d, config={}) => SVG("path", blend(config, { d: d }))
 , TEXT  = (t,c,s,n="p") => TAG(n,c,s,t)
-, SPAN = (t, c, s, n = "span") => TAG(n, c, s, t)
+, SPAN = (t, c, s, n = "span") => TAG(n, c, s, ''+t)
 , BOLD = (t,c,s) => TAG("b",c,s,t)
 , ITALIC = (t,c,s) => TAG("i",c,s,t)
-, ROW = (c, s, e) => { const x = DIV("row " + (c || ''), s); if (e) { typeof e == "string" ? x.html(e) : x.app(e); } return x }
+, ROW = (c, s, e) => { const x = DIV("row " + (c || ''), s); if (e) { typeof e == "string" ? x.html(e) : x.append(e); } return x }
+, COL = (c, s, e, n=1) => { const x = DIV("col-" + n + " " + (c || ''), s); if (e) { typeof e == "string" ? x.html(e) : x.append(e); } return x }
 , WSPAN = (t,c,s,n="span") => TAG(n,c,blend({ paddingLeft:"1em" }, s||{}),t)
 , blend = (target = {}, ...sources) => {
     for (const source of sources) {
@@ -150,8 +151,16 @@ blend(HTMLFormElement.prototype, {
                 if(o.getAttribute(`type`) == `checkbox` && !o.checked) return
                 let
                 name = o.getAttribute('name') || o.dataset.name
-                , value =  o.value || o.attributes['value']?.value || o.dataset?.value || o.textContent?.trim() || o.checked || null
+                , value = undefined
+                , values = [ 
+                    o.value
+                    , o.attributes['value']?.value || undefined
+                    , o.dataset?.value || undefined
+                    , o.textContent?.trim() || undefined
+                    , o.checked || null
+                ]
                 ;;
+                while(value == undefined) value = values.shift()
                 if (o.has("-list")) value = value.split(/\n+/gi).filter(i=> i=='' || i==null || i==undefined || isNaN(i) ? i : i*1)
                 if (o.has("-hash")) value = Array.isArray(value) ? value.map(x => { return (x||``).hash() }) : (value||``).hash()
                 value = (value=='' || value==null || value==undefined || typeof value == `boolean` || isNaN(value)) ? value : value * 1
@@ -258,7 +267,7 @@ blend(Element.prototype, {
             if(typeof tx == 'string') this.innerHTML = tx;
             else try {
                 const p = this ;;
-                Array.from(tx).forEach(e => p.app(e))
+                Array.from(tx).forEach(e => p.append(e))
             } catch(e) {}
             this.evalute()
         } else return this.innerHTML;
@@ -284,10 +293,10 @@ blend(Element.prototype, {
         } else if (obj) el.insertAdjacentElement(w, obj);
         return this
     }
-    , aft: function (obj = null) { return this._put_where_(obj, "afterend") }
-    , bef: function (obj = null) { return this._put_where_(obj, "beforebegin") }
-    , app: function (obj = null) { return this._put_where_(obj, "beforeend") }
-    , pre: function (obj = null) { return this._put_where_(obj, "afterbegin") }
+    , after: function (obj = null) { return this._put_where_(obj, "afterend") }
+    , before: function (obj = null) { return this._put_where_(obj, "beforebegin") }
+    , append: function (obj = null) { return this._put_where_(obj, "beforeend") }
+    , prepend: function (obj = null) { return this._put_where_(obj, "afterbegin") }
     , append: function (obj = null) { return this._put_where_(obj, "beforeend") }
     , prepend: function (obj = null) { return this._put_where_(obj, "afterbegin") }
     , has: function (cls = null) {
@@ -455,15 +464,7 @@ blend(Element.prototype, {
     , remove: function () { if ( this.parentElement) this.parentElement.removeChild(this) }
     , val: function(v){
         if(v !== undefined || v !== null) {
-            if([ "INPUT", "SELECT" ].includes(this.tagName)){
-                const timer = setInterval((uid, v) => {
-                    const e = $(`#${uid}`)[0] ;;
-                    if(e){
-                        e.value = v
-                        clearInterval(timer)
-                    }
-                }, 100, this.uid(), (v+``).trim())
-            }
+            this.value = v
             return this
         }
         return this.value
@@ -484,10 +485,11 @@ blend(String.prototype, {
     }
     , sanitized_compare: function (word) {
         const w = this ;;
-        if(!w || !word) return false
+        if(!w || !word) return true
         try {
+            console.log()
             return Boolean((new RegExp(
-                w
+                word
                 .replace(/\s+/giu, ' ')
                 .replace(/(a|á|à|ã)/giu, "(a|á|à|ã)")
                 .replace(/(e|é|ê)/giu,   "(e|é|ê)")
@@ -495,7 +497,7 @@ blend(String.prototype, {
                 .replace(/(o|ó|ô|õ)/giu, "(o|ó|ô|õ)")
                 .replace(/(u|ú)/giu,     "(u|ú)")
                 .replace(/(c|ç)/giu,     "(c|ç)")
-            , 'giu')).test(word.trim().replace(/\s+/gi, ' ')))
+            , 'giu')).test(w.trim().replace(/\s+/gi, ' ')))
         } catch(e) {
             return false
         }
@@ -838,11 +840,11 @@ blend(Array.prototype, {
         return this.forEach(x => x.disappear(len, remove, fn))
     }
     , val: function(v=null){
-        if(![ null, undefined ].includes(v)) this.forEach(x => x.val(v))
+        this.forEach(x => x.val(v))
         return this
     }
-    , app: function (el = null) {
-        if (el) this.forEach(x => x.app(el))
+    , append: function (el = null) {
+        if (el) this.forEach(x => x.append(el))
         return this
     }
 });
@@ -850,16 +852,6 @@ blend(Array.prototype, {
 blend(Object.prototype, {
     keys: function() { return Object.keys(this) }
     , values: function() { return Object.values(this) }
-    , walk: function(path, value) {
-        const keys = path.split('.') ;;
-        if (keys.length === 1) this[keys[0]] = value
-        else {
-            const key = keys.shift() ;;
-            this[key] = this[key] || {}
-            this[key].walk(keys.join('.'), value)
-        }
-        return this
-    }
 });
 
 Object.defineProperty(Object.prototype, "spy", {
@@ -1385,29 +1377,31 @@ class fw {
             , res = await req.text()
             ;;
             return { url, args, method, req, res };
-    } catch(e) {
+        } catch(e) {
             console.log({ err: e, url, args, head })
         }
     }
 
     static async post(url, args, head = null) {
-        return fw.call(url, args, "POST", head)//blend({ 'Accept': 'application/json', 'Content-Type': 'application/json; charset=UTF-8' }, head || {}))
+        return fw.call(url, args, "POST", head)
     }
 
     static async load(url, config = {}) {
+        ;(window.loading?.on?.apply() || null);
         let { args, target, bind } = (config || {}) ;;
         return fw.call(url, args).then(r => {
             if (!r?.res) return fw.error("error loading " + url);
             r = r.res.prepare(bind).morph()
-            if (!target) target = fw.$('body').at()
+            if (!target) target = $('body').at()
             function insert(h) {
                 if(h instanceof HTMLCollection) Array.from(h).forEach(insert)
                 else {
-                    target.app(h)
+                    target.append(h)
                     h.evalute()
                 }
             }
             insert(r)
+            ;(window.loading?.off?.apply() || null);
             return r
         })
     }
@@ -1467,7 +1461,7 @@ class fw {
             return loading_list
         } else {
             const
-            load = WRAP(DIV('abs zbr blur ph2', { transform: 'scale(.5)' }).app(SPAN(txt, "-pulse", {
+            load = WRAP(DIV('abs zbr blur ph2', { transform: 'scale(.5)' }).append(SPAN(txt, "-pulse", {
                 fontSize: "4em"
                 , color: "#0004"
             }, "i")), "absolute zero -loading", {
@@ -1476,54 +1470,62 @@ class fw {
                 , zIndex: 10000
             })
             ;;
-            (target || $("#app")).app(load);
+            (target || $("#app")).append(load);
             load.anime({ filter: 'opacity(1)' })
             return load
         }
 
     }
-
-    static notify(n, c = null) {
-        const
-        toast = document.createElement("toast")
-        , clr = fw.palette
+    static notify(message, colors = null) {
+        const 
+        toast = document.createElement("div")
+        , palette = fw.palette
         ;;
-        toast.addClass("fixed tile content-left _notification").css({
-            background: c && c[0] ? c[0] : clr.FOREGROUND
-            , color: c && c[1] ? c[1] : clr.FONT
-            , boxShadow: "0 0 .25em " + clr.FONT + '44'
-            , borderRadius: ".25em"
-            , padding: "1em"
-            , display: 'block'
-            , opacity: 0
-            , fontWeight: "bolder"
-            , top: 0
-            , right: 0
-            , margin: "1em"
-            , zIndex: 10001
-        }).innerHTML = n ? n : "Hello <b>World</b>!!!";
-        if (!fw.is_mobile()) toast.css({ width: "20vw" });
-        else toast.css({ width: "(100vw - 2em)" })
-        toast.onclick = function () { clearTimeout(this.dataset.delay); this.disappear(ANIMATION_LENGTH / 2, true); };
-        toast.onmouseenter = function () { clearTimeout(this.dataset.delay); };
-        toast.onmouseleave = function () {
-            this.dataset.delay = setTimeout(t => { t.disappear(ANIMATION_LENGTH / 2, true); }, ANIMATION_LENGTH, this);
+        toast.classList.add("fixed", "tile", "content-left", "_notification");
+        toast.style.cssText = `
+            background: ${colors && colors[0] ? colors[0] : palette.FOREGROUND};
+            color: ${colors && colors[1] ? colors[1] : palette.FONT};
+            box-shadow: 0 0 .25em ${palette.FONT}44;
+            border-radius: .25em;
+            padding: 1em;
+            display: block;
+            opacity: 0;
+            font-weight: bolder;
+            top: 0;
+            right: 0;
+            margin: 1em;
+            z-index: 10001;
+            ${!fw.is_mobile() ? "width: 20vw;" : "width: calc(100vw - 2em);"}
+        `;
+        toast.innerHTML = message || "Hello <b>World</b>!!!";
+
+        toast.onclick = () => {
+            clearTimeout(toast.dataset.delay);
+            toast.disappear(ANIMATION_LENGTH, true);
         };
-        document.getElementsByTagName('body')[0].appendChild(toast);
+        toast.onmouseenter = () => clearTimeout(toast.dataset.delay);
+        toast.onmouseleave = () => {
+            toast.dataset.delay = setTimeout(() => {
+                toast.disappear(ANIMATION_LENGTH, true);
+            }, ANIMATION_LENGTH);
+        };
+
+        document.body.appendChild(toast);
         tileEffect(".tile");
+        toast.raise();
 
-        toast.raise()
-
-        let
-        notfys = $("toast._notification")
-        , ht = 0
-        ;
-        notfys.forEach(x => {
-            x.anime({ transform: "translateY(" + ht + "px)", opacity: 1 }, ANIMATION_LENGTH / 4)
-            ht += x.getBoundingClientRect().height + 8;
+        const notifications = document.querySelectorAll("div._notification");
+        let offset = 0;
+        notifications.forEach(notification => {
+            notification.anime({ transform: `translateY(${offset}px)`, opacity: 1 }, ANIMATION_LENGTH / 2);
+            offset += notification.getBoundingClientRect().height + 8;
         });
-        toast.dataset.delay = setTimeout(function () { toast.disappear(ANIMATION_LENGTH / 2, true); }, ANIMATION_LENGTH * 5);
-        return toast
+
+        toast.dataset.delay = setTimeout(() => {
+            toast.disappear(ANIMATION_LENGTH / 2, true);
+        }, ANIMATION_LENGTH * 5);
+
+        return toast;
     }
 
     static error(message = null) {
@@ -1540,124 +1542,133 @@ class fw {
     }
 
     static window(html, title, css = {}) {
-        const
-        mob = fw.is_mobile()
-        , head = TAG("header", "relative row zero -window-header no-scrolls ph").app([
-            DIV("left content-left ellipsis no-scrolls -drag-trigger", { cursor: 'all-scroll', height: "2em", width: "calc(100% - 6em)" }).app(
+        const mob = fw.is_mobile();
+        const head = TAG("header", "relative row zero -window-header no-scrolls ph").append([
+            DIV("left content-left ellipsis no-scrolls -drag-trigger", { cursor: 'all-scroll', height: "2em", width: "calc(100% - 6em)" }).append(
                 typeof title == "string" ? ("<span class='row px2 no-scrolls' style='opacity:.64'>" + title + "</span>").morph()[0] : title
-            ).on("click", function () { this.upFind("-window").raise() })
+            ).on("click", function () { this.upFind("-window").raise() }),
             // CLOSE
-            , DIV("relative right pointer -close tile", { height: `2em`, width: `2em` }).app(
+            DIV("relative right pointer -close tile", { height: `2em`, width: `2em` }).append(
                 SPAN(`close`, `icon centered`)
             ).on("click", function () {
-                const w = this.upFind("-window") ;;
-                w.dispatchEvent(new Event('close'))
-                w.disappear(AL, true)
-                $(".-minimized").forEach((el, i) => { el.anime({ left: (i * 13.3) + 'vw' }) })
-            })
-            // // MAXIMIZE
-            // , mob ? DIV() : DIV("relative right pointer -maximize tile", { height:`2em`, width: `2em` }).app(
-            //     SPAN(`north_east`, `icon centered`)
-            // ).on("click", function () {
-            //     const win = this.upFind("-window") ;;
-            //     if (win.has("-maximized")) {
-            //         const pos = win.position ;;
-            //         win.$(".wrap")[0].style.display = "block";
-            //         win.anime({ height: pos.h + "px", width: pos.w + "px", top: pos.y + "px", left: pos.x + "px" });
-            //         win.remClass("-maximized");
-            //     } else {
-            //         win.position = {
-            //             w: win.offsetWidth
-            //             , h: win.offsetHeight
-            //             , x: win.offsetLeft
-            //             , y: win.offsetTop
-            //         }
-            //         win.anime({ height: "100vh", width: "100vw", top: 0, left: 0 });
-            //         win.addClass("-maximized");
-            //     }
-            // })
+                const w = this.upFind("-window");
+                w.dispatchEvent(new Event('close'));
+                w.disappear(AL, true);
+                $(".-minimized").forEach((el, i) => { el.anime({ left: (i * 13.3) + 'vw' }) });
+            }),
+            // MAXIMIZE
+            mob ? DIV() : DIV("relative right pointer -maximize tile", { height: `2em`, width: `2em` }).append(
+                SPAN(`resize`, `icon centered`)
+            ).on("click", function () {
+                const win = this.upFind("-window");
+                if (win.has("-maximized")) {
+                    const pos = win.position;
+                    win.anime({ height: pos.h + "px", width: pos.w + "px", top: pos.y + "px", left: pos.x + "px" });
+                    win.remClass("-maximized");
+                } else {
+                    win.position = {
+                        w: win.offsetWidth,
+                        h: win.offsetHeight,
+                        x: win.offsetLeft,
+                        y: win.offsetTop
+                    };
+                    win.anime({ height: "100vh", width: "100vw", top: 0, left: 0 });
+                    win.addClass("-maximized");
+                    win.remClass("-minimized");
+                }
+                win.$('.-minimize').anime({ transform: "rotate(0deg)" });
+                setTimeout(() => {
+                    win.dispatchEvent(new Event('resize'));
+                    win.dispatchEvent(new Event('maximize'));
+                }, AL * 2);
+            }),
             // MINIMIZE
-            , mob ? DIV() : DIV("relative right pointer -minimize tile", { height:`2em`, width: `2em` }).app(
+            mob ? DIV() : DIV("relative right pointer -minimize tile", { height: `2em`, width: `2em` }).append(
                 SPAN(`south_west`, `icon centered`)
             ).on("click", function () {
-                const win = this.upFind("-window") ;;
+                const win = this.upFind("-window");
                 if (win.has("-minimized")) {
-                    const pos = win.position ;;
+                    const pos = win.position;
                     this.anime({ transform: "rotate(0deg)" });
                     win.$(".wrap")[0].style.display = "block";
                     win.anime({ height: pos.h + "px", width: pos.w + "px", top: pos.y + "px", left: pos.x + "px" });
                     win.remClass("-minimized");
                 } else {
                     win.position = {
-                        w: win.offsetWidth
-                        , h: win.offsetHeight
-                        , x: win.offsetLeft
-                        , y: win.offsetTop
-                    }
+                        w: win.offsetWidth,
+                        h: win.offsetHeight,
+                        x: win.offsetLeft,
+                        y: win.offsetTop
+                    };
                     this.anime({ transform: "rotate(180deg)" });
                     win.$(".wrap")[0].hide();
                     win.anime({ height: "2em", width: "13.3vw", top: "calc(100vh - 2.25em)", left: '.5em' });
                     win.addClass("-minimized");
+                    win.remClass("-maximized");
                 }
-                $(".-minimized").forEach((el, i) => { el.anime({ left: `${i * 13.5}vw` }) })
+                $(".-minimized").forEach((el, i) => { el.anime({ left: `${i * 13.5}vw` }) });
+                setTimeout(() => {
+                    win.dispatchEvent(new Event('resize'));
+                    win.dispatchEvent(new Event('minimize'));
+                }, AL * 2);
             })
-        ])
-        , wrapper = DIV("wrap relative m0 p0 px", { height: "calc(100% - 2em)" })
-        , _W = TAG("div", "fixed p0 m0 blur -drag-target -window", blend({
-            height          : mob ? "100vh" : "auto"
-            , height        : "auto"
-            , minHeight     : mob ? "100vh": "10vh"
-            , maxHeight     : "100vh"
-            , width         : mob ? "100vw" : "64vw"
-            , maxWidth      : "100vw"
-            , top           : mob ? 0 : (css?.height ? `calc(50% - (${css.height} / 2))` : '16vh')
-            , left          : mob ? 0 : (css?.width ? `calc(50% - (${css.width} / 2))` : '16vw')
-            , background    : fw.palette.FOREGROUND + "AA"
-            , border        : "1px solid " + fw.palette.FONT + "22"
-            , borderRadius  : ".5em"
-            , boxShadow     : "0 0 1em " + fw.palette.FONT + "88"
-            , color         : fw.palette.FONT
-            , resize        : "both"
-            , overflow      : "auto"
-            , zIndex        : 8000
-        }, css)).data({ state: "default" })
-        , uuid = fw.uuid()
-        ;;
-        _W.id = uuid
-        if (html) wrapper.app(typeof html == "string" ? html.prepare({uuid}).morph() : html)
-        $("#app").app(_W.app(head).app(wrapper).css({ opacity:0 }))
-        _W.raise()
-        _W.evalute()
-        _W.appear(AL, true)
-        _W.close = _ => _W.$('.-close')[0].dispatchEvent(new Event('click'))
+        ]);
+
+        const wrapper = DIV("wrap relative content", { height: "calc(100% - 2em)" });
+        const _W = TAG("div", "fixed p0 m0 blur -drag-target -window", blend({
+            height: mob ? "100vh" : "auto",
+            minHeight: mob ? "100vh" : "10vh",
+            maxHeight: "100vh",
+            width: mob ? "100vw" : "64vw",
+            maxWidth: "100vw",
+            top: mob ? 0 : (css?.height ? `calc(50% - (${css.height} / 2))` : '16vh'),
+            left: mob ? 0 : (css?.width ? `calc(50% - (${css.width} / 2))` : '16vw'),
+            background: fw.palette.FOREGROUND + "AA",
+            border: "1px solid " + fw.palette.FONT + "22",
+            borderRadius: ".5em",
+            boxShadow: "0 0 1em " + fw.palette.FONT + "88",
+            color: fw.palette.FONT,
+            resize: "both",
+            overflow: "auto",
+            zIndex: 8000
+        }, css)).data({ state: "default" });
+
+        const uuid = fw.uuid();
+        _W.id = uuid;
+        if (html) wrapper.append(typeof html == "string" ? html.prepare({ uuid }).morph() : html);
+        $("#app").append(_W.append(head).append(wrapper).css({ opacity: 0 }));
+        _W.raise();
+        _W.evalute();
+        _W.appear(AL, true);
+        _W.close = () => _W.$('.-close')[0].dispatchEvent(new Event('click'));
         tileEffect(".tile");
         enableDragging();
-        return _W
+        return _W;
     }
 
     static dialog(html = null, title = null, css = {}) {
         const
         mob = fw.is_mobile()
         , w = fw.window(html, title, blend({
-            minHeight: mob ? "90vh" : "8em"
+            minHeight: mob ? "90vh" : "24em"
             , width: mob ? "90vw" : "24vw"
             , top: mob ? "5vh" : "35vh"
             , left: mob ? "5vw" : "38vw"
             , color: fw.palette.FONT
         }, css))
         ;;
-        w.$('.-minimize').remove()
+        w.$('.-minimize, .-maximize').remove()
         return w
     }
 
     static confirm(message='Confirm?', title='') {
         const
         dialog = fw.dialog(
-            DIV('wrap no-scrolls').app([
+            DIV('wrap no-scrolls').append([
                 TAG('p', 'row px2 content-left').text(message)
-                , DIV('row flex px2').app([
-                    DIV('col-4 p0').app(
-                        DIV('row').app(
+                , DIV('row flex px2').append([
+                    DIV('col-4 p0').append(
+                        DIV('row').append(
                             TAG('button', 'wrap content-center pointer px2', {
                                 border:'none'
                                 , borderRadius:'.5em'
@@ -1672,8 +1683,8 @@ class fw {
                         w.disappear(AL, true)
                     })
                     , DIV('col-4')
-                    , DIV('col-4 p0').app(
-                        DIV('row').app(
+                    , DIV('col-4 p0').append(
+                        DIV('row').append(
                             TAG('button', 'wrap content-center pointer px2', {
                                 borderRadius:'.5em'
                                 , border:'none'
@@ -1833,14 +1844,12 @@ class fw {
         a.dispatchEvent(e);
     }
 
-    static copy2clipboard = (str, msg=false) => {
-        const el = document.createElement('textarea');
-        el.value = str;
-        document.body.appendChild(el);
-        el.select();
-        document.execCommand('copy');
-        document.body.removeChild(el);
-        if(msg) fw.notify(`${str} copied to clipboard!`)
+    static copy2clipboard = (str, msg = false) => {
+        navigator.clipboard.writeText(str).then(() => {
+            if (msg) fw.notify(`${str} copied to clipboard!`);
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+        });
     }
 
     static async delay(ms=1000) {
@@ -1848,41 +1857,44 @@ class fw {
     }
 
     static $(wrapper = null, context = document) {
-        const t = [].slice.call(context.querySelectorAll(wrapper));
-        // if(t[0] && t[0].id && t[0].id == wrapper.split(`#`)[1]) return t[0]
-        return t
+        return [].slice.call(context.querySelectorAll(wrapper))
     }
 
-    static nfmt = (n, f=2) => n && (n).toFixed(f)*-1 ? n.toFixed(f).replace(`.`, `,`).replace(/\B(?=(\d{3})+(?!\d))/g, ".") : `-`
-
+    static n = (n, f=2) => n && (n).toFixed(f)*-1 ? n.toFixed(f).replace(`.`, `,`).replace(/\B(?=(\d{3})+(?!\d))/g, ".") : `-`
 
     static increment(target, value, config = {}) {
         try {
+            config = {
+                direction: config.direction || (target.value < value),
+                pace: config.pace || (Math.abs(value - target.value) / 10),
+                fixed: config.fixed || 0,
+                fill: config.fill || 0,
+                count: config.count || 0,
+                nerd: config.nerd || false,
+                suffix: config.suffix || ""
+            };
 
-            config = config || {}
+            let currentValue = parseFloat(target.value || target.text()) || 0;
 
-            let v = (target.value||target.text()) * 1 || 0 ;;
+            if (currentValue === value || !target) return;
 
-            if(v == value || !target) return
+            currentValue += config.pace;
+            target.value = currentValue;
 
-            config.d = config.d || v < value
-            config.pace = config.pace || (Math.abs(value) - Math.abs(v)) / 10
-            config.fixed = config.fixed || 0
-            config.fill = config.fill || 0
-
-            v += config.pace
-            target.value = v
-
-            config.count = (config.count||0)
-            if(config.count++ > 10 || (config.d && v >= value) || (!config.d && v <= value)){
-                target.value = value
-                return target.text((config.nerd ? value.nerdify(config.fixed||1) : value.toFixed(config.fixed||0).fill('0', config.fill||0)) + (config?.suffix||""))
+            if (target.inPage() === false || config.count++ > 10 || 
+                (config.direction && currentValue >= value) || 
+                (!config.direction && currentValue <= value)) {
+                target.value = value;
+                target.text((config.nerd ? value.nerdify(config.fixed) : value.toFixed(config.fixed).padStart(config.fill, '0')) + config.suffix);
+                return;
             }
-            target.text(config.nerd ? v.nerdify(config.fixed||1) : v.toFixed(config.fixed||0).fill('0', config.fill||0))
-            setTimeout(increment, 20, target, value, config)
-        } catch(e) { console.trace(e) }
-    }
 
+            target.text(config.nerd ? currentValue.nerdify(config.fixed) : currentValue.toFixed(config.fixed).padStart(config.fill, '0'));
+            requestAnimationFrame(() => fw.increment(target, value, config));
+        } catch (e) {
+            console.trace(e);
+        }
+    }
 };
 
 $ = fw.$
@@ -1978,9 +1990,9 @@ function selects() {
             , borderRadius: `.25em`
             , color: ft
             , background: bg
-        }).app(
-            DIV(`wrap no-scrolls`, { borderRadius:`.25em` }).app([
-                DIV(`relative bar`, { width:`calc(100% - ${h}px)` }).app([
+        }).append(
+            DIV(`wrap no-scrolls`, { borderRadius:`.25em` }).append([
+                DIV(`relative bar`, { width:`calc(100% - ${h}px)` }).append([
                     TAG(`input`).attr({ type: `hidden`, name: sel.attributes[`name`]?.value })
                     , TAG(`input`, `row centered ellipsis content-left px only-pointer`, {
                         border:`none`
@@ -1993,7 +2005,7 @@ function selects() {
                         , placeholder: sel.getAttribute(`placeholder`) || `-`
                     })
                 ])
-                , DIV(`relative right bar`, { width: (h - 4) + `px` }).app(
+                , DIV(`relative right bar`, { width: (h - 4) + `px` }).append(
                     SPAN(`arrow_drop_down`, `icon centered`, { fontSize:`1.5em` })
                 )
             ])
@@ -2016,9 +2028,9 @@ function selects() {
             , left: rect.x + `px`
             , width: rect.width + `px`
             , zIndex: 9000
-        }).app(
-            DIV(`row _Searcher`, { height: `${h}px`}).app([
-                DIV(`relative left bar pl2`, { width: `calc(100% - ${h}px` }).app(
+        }).append(
+            DIV(`row _Searcher`, { height: `${h}px`}).append([
+                DIV(`relative left bar pl2`, { width: `calc(100% - ${h}px` }).append(
                     TAG(`input`, `centered px2 row`, {
                         border: 'none'
                         , background: 'none'
@@ -2028,15 +2040,15 @@ function selects() {
                         , placeholder: `Filter:`
                     }).on([ `keyup`, `blur` ], ev => search_ev.fire(ev))
                 )
-                , DIV(`relative left bar only-pointer`, { width: h + `px` }).app(
+                , DIV(`relative left bar only-pointer`, { width: h + `px` }).append(
                     SPAN(`close`, `centered icon`)
                 ).on(`click`, _ => menu.hide())
             ])
-        ).app(
+        ).append(
             DIV(`row scrolls -stage`, { maxHeight: `28vh` })
         ).on(`mouseenter`, e => menu.remClass(`_blured`)).on(`mouseleave`, e => menu.addClass(`_blured`))
         ;;
-        ;[].slice.call(sel.children).forEach(item => menu.$(`.-stage`)[0].app(
+        ;[].slice.call(sel.children).forEach(item => menu.$(`.-stage`)[0].append(
             item.mime().addClass(`row pointer tile content-left ellipsis -item`).css({
                 padding:`.5em`
                 , minHeight: '2em'
@@ -2058,8 +2070,8 @@ function selects() {
             })[behavior == 'hint' ? 'hide' : 'show']()
         ))
         e.form = menu
-        sel.parent().pre(e)
-        $(`body`)[0].app(menu)
+        sel.parent().prepend(e)
+        $(`body`)[0].append(menu)
         menu.$(`.-item`).forEach(item => {
             if([ `true`, `selected`, `checked`, `default`, `1`, 1 ].indexOf(item.attributes[`selected`]?.value.toLowerCase())+1) item.dispatchEvent(new Event(`click`))
         })
@@ -2115,11 +2127,11 @@ function lists() {
             , background: fw.palette.FOREGROUND
             , borderRadius:`.5em`
             , border: `1px solid ${ft}44`
-        }).app(
-            TAG(`form`, `wrap no-scrolls m0 p0`, { height: rect.height + `px` }).attr({ action: `javascript:void(0)`, name: sel.getAttribute(`name`) }).app([
+        }).append(
+            TAG(`form`, `wrap no-scrolls m0 p0`, { height: rect.height + `px` }).attr({ action: `javascript:void(0)`, name: sel.getAttribute(`name`) }).append([
                 TAG(`input`).attr({ type:`hidden`, name: sel.attributes[`name`]?.value })
-                , DIV(`row _Searcher`, { height: `2em`, borderBottom: `1px solid {{font}}44`}).app([
-                    DIV(`relative wrap`).app(
+                , DIV(`row _Searcher`, { height: `2em`, borderBottom: `1px solid {{font}}44`}).append([
+                    DIV(`relative wrap`).append(
                         TAG(`input`, `row centered px`, { border: 'none' }).attr({
                             type: `search`
                             , placeholder: `Filter:`
@@ -2130,11 +2142,11 @@ function lists() {
             ])
         )
         ;;
-        [].slice.call(sel.children).forEach(item => e.$(`.-stage`)[0].app(
+        [].slice.call(sel.children).forEach(item => e.$(`.-stage`)[0].append(
             DIV(`row flex only-pointer no-scrolls tile -item -active m0 px`, {
                 height: `2em`
                 , borderRadius: `.25em`
-            }).app(
+            }).append(
                 item.mime().addClass(`wrap content-left ellipsis no-scrolls m0 px`)
             ).on(`click`, ev => {
                 e.$(`.-item`).not(ev.target).css({ background: `transparent`, border:`none` })
@@ -2142,7 +2154,7 @@ function lists() {
                 ev.target.upFind(`form`).$(`input[type=hidden]`)[0].value = ev.target.textContent
             })
         ))
-        sel.parent().pre(e)
+        sel.parent().prepend(e)
         e.$(`item`).forEach(item => {
             if([ `true`, `selected`, `checked`, `default`, `1`, 1 ].indexOf(item.attributes[`selected`]?.value.toLowerCase())+1) item.dispatchEvent(new Event(`click`))
         })
@@ -2170,7 +2182,7 @@ function multiselects() {
     $(`fmultiselect`).forEach(sel => {
         const
         ft = sel.attributes[`font`]?.value || fw.palette.FONT
-        , bg = sel.attributes[`bg`]?.value   || fw.palette.FOREGROUND
+        , bg = sel.attributes[`bg`]?.value || fw.palette.FOREGROUND
         , cls = sel.className
         , rect = sel.parent().getBoundingClientRect()
         , h = Math.max(fw.em2px(2), rect.height)
@@ -2179,11 +2191,12 @@ function multiselects() {
             border: 'none'
             , background: bg
             , color: ft
+            , height: (h * .75) + `px`
         }).attr({
             tip:`@`
             , type: `text`
             , readonly: `true`
-            , placeholder: sel.getAttribute(`placeholder`) || `-`
+            , placeholder: sel.getAttribute(`placeholder`) || sel.getAttribute(`label`) || `-`
         })
         , e = DIV(`relative wrap p0 m0 _multiselect ` + cls, {
             overflow: `hidden`
@@ -2191,11 +2204,11 @@ function multiselects() {
             , color: ft
             , borderRadius:`.25em`
             , border: `1px solid ${ft}44`
-        }).app(
-            DIV(`wrap only-pointer no-scrolls`, { borderRadius:`.5em` }).app(
-                DIV(`relative bar`, { width:`calc(100% - ${h}px)` }).app(input)
-            ).app(
-                DIV(`relative right bar`, { width: (h - 4) + `px` }).app(
+        }).attr({ name: sel.getAttribute(`name`) }).append(
+            DIV(`wrap only-pointer no-scrolls`, { borderRadius:`.5em` }).append(
+                DIV(`relative bar no-sccrolls`, { width:`calc(100% - ${h}px)` }).append(input)
+            ).append(
+                DIV(`relative right bar no-scrolls`, { width: (h - 4) + `px` }).append(
                     SPAN(`arrow_drop_down`, `icon centered`, {
                         color: fw.palette.FONT
                         , fontSize:`1.5em`
@@ -2214,20 +2227,19 @@ function multiselects() {
             , color: ft
             , top: rect.y + `px`
             , left: rect.x + `px`
-            , width: 'calc(' + rect.width + 'px - .5em)'
             , zIndex: 9000
         }).attr({
             action: `javascript:void(0)`
             , name: sel.getAttribute(`name`)
-        }).app([
-            DIV(`row _Searcher`, { height: `${h}px`}).app([
-                DIV(`relative left bar`, { width: h + `px` }).app(
-                    TAG(`input`, `centered only-pointer p0 m0 _master-check`).attr({ type:`checkbox` }).on(`click`, ev => {
+        }).append([
+            DIV(`row _Searcher`, { height: `${h}px`}).append([
+                DIV(`relative left bar no-scrolls`, { width: h + `px` }).append(
+                    TAG(`input`, `centered pointer p0 m0 _master-check`).attr({ type:`checkbox` }).on(`click`, ev => {
                         menu.$(`.-item.-active`).map(item => item.$(`._check`)[0].checked = ev.target.checked)
                         fill_label.fire()
                     })
                 )
-                , DIV(`relative left bar`, { width: `calc(100% - ${h*2}px` }).app(
+                , DIV(`relative left bar no-scrolls`, { width: `calc(100% - ${h*2}px` }).append(
                     TAG(`input`, `row centered px`, {
                         border: 'none'
                         , background: bg
@@ -2240,38 +2252,45 @@ function multiselects() {
                         else search_ev.fire(ev)
                     })
                 )
-                , DIV(`relative left bar only-pointer`, { width: h + `px` }).app(
+                , DIV(`relative left bar only-pointer`, { width: h + `px` }).append(
                     SPAN(`close`, `centered icon`)
                 ).on(`click`, _ => menu.hide())
             ])
             , DIV(`row scrolls -stage`, { maxHeight: `28vh` })
-        ]).on(`mouseenter`, e => e.target.remClass(`_blured`)).on(`mouseleave`, e => e.target.addClass(`_blured`))
+        ]).on(`mouseenter`, e => {
+            clearInterval(e.target.hidetimer)
+            e.target.remClass(`_blured`)
+        }).on(`mouseleave`, e => {
+            e.target.addClass(`_blured`)
+            e.target.hidetimer = setTimeout(_ => e.target.hide(), AL * 10)
+        })
         ;;
         let count = 0 ;;
-        ;[].slice.call(sel.children).sort((p, q) => p.textContent.localeCompare(q.textContent)).forEach(item => menu.$(`.-stage`)[0].app(
-            DIV(`row flex only-pointer no-scrolls tile -item -active m0 p0 content-left`, { borderBottom: `1px solid ${fw.palette.DARK2}`, height: '2em' }).app([
-                DIV(`relative bar`, { width: h + `px` }).app(
+        ;[].slice.call(sel.children).sort((p, q) => p.textContent.localeCompare(q.textContent)).forEach(item => menu.$(`.-stage`)[0].append(
+            DIV(`row flex pointer no-scrolls tile -item -active m0 p0 content-left`, { borderBottom: `1px solid ${fw.palette.DARK2}`, height: '2em' }).append([
+                DIV(`relative bar no-scrolls`, { width: h + `px` }).append(
                     TAG(`input`, `centered p0 m0 _check`,).attr({
                         type:`checkbox`
                         , name: sel.attributes[`name`]?.value||``
-                        , value: item.attributes[`value`]?.value||item.textContent||``
+                        , value: item.attributes[`value`]?.value||``
+                    }).on('click', function(){
+                        this.click()
+                        if(!this.checked) $(`._master-check`)[0].checked = false
+                        fill_label.fire()
                     })
                 )
                 , item.mime().emptyClasses().addClass(`bar content-left ellipsis no-scrolls m0 px`).css({ width: `calc(100% - ${h}px)` })
             ]).on(`click`, function() {
                 this.$(`[type=checkbox]`)[0].click()
-                if(!this.$(`[type=checkbox]`)[0].checked) $(`._master-check`)[0].checked = false
-                fill_label.fire()
             }).attr({ selected: item.getAttribute('selected') || null })
         ))
         e.form = menu
         e.input = input
-        sel.parent().pre(e)
-        $(`body`)[0].app(menu)
+        sel.parent().prepend(e)
+        $(`body`)[0].append(menu)
         menu.$(`.-item`).forEach(item => {
             if([ `true`, `selected`, `checked`, `default`, `1`, 1 ].indexOf(item.attributes[`selected`]?.value.toLowerCase())+1) item.dispatchEvent(new Event(`click`))
         })
-
         const
         fill_label = new throttle(_ => {
             const values = menu.$(`.-item.-active`).map(item => item.$(`._check`)[0].checked ? item.textContent : null).filter(i=>i) ;;
@@ -2282,11 +2301,12 @@ function multiselects() {
                 return item.$(`._check`)[0].checked == false
             }).length) menu.$(`._master-check`)[0].checked = false
             else menu.$(`._master-check`)[0].checked = true
-            if (change) try { eval(change)(menu.json(), e) } catch(e) { console.trace(e) }
+            if (change) try { eval(change)(menu.json(), e) } catch(err) { console.trace(err) }
+            e.dispatchEvent(new Event('change'))
         }, 40)
         , search_ev = new throttle(ev => {
             menu.$(`.-item`).forEach(item => {
-                if(!ev.target.value || ev.target.value.sanitized_compare(item.textContent)) {
+                if(!ev.target.value || item.textContent.sanitized_compare(ev.target.value)) {
                     item.addClass(`-active`).show()
                 } else {
                     item.remClass(`-active`).hide()
@@ -2318,7 +2338,7 @@ function multiselects() {
             sel.attributes[`value`].value.split(`,`).forEach(item => menu.$(`[value="${item}"]`)[0]?.click())
             setTimeout(_ => fill_label.fire(), AL)
         }
-        menu.hide()
+        menu.css({ width: getComputedStyle(sel.parentElement).width }).hide()
         sel.remove()
     })
 }
@@ -2336,15 +2356,15 @@ function multilists() {
             , background: fw.palette.FOREGROUND
             , borderRadius:`.5em`
             , border: `1px solid ${ft}44`
-        }).app(
-            TAG(`form`, `wrap no-scrolls m0 p0`, { height: rect.height + `px` }).attr({ action: `javascript:void(0)`, name: sel.getAttribute(`name`) }).app([
-                DIV(`row _Searcher`, { height: `2em`, borderBottom: `1px solid {{font}}44`}).app([
-                    DIV(`relative left bar`, { width: `2em` }).app(
+        }).append(
+            TAG(`form`, `wrap no-scrolls m0 p0`, { height: rect.height + `px` }).attr({ action: `javascript:void(0)`, name: sel.getAttribute(`name`) }).append([
+                DIV(`row _Searcher`, { height: `2em`, borderBottom: `1px solid {{font}}44`}).append([
+                    DIV(`relative left bar`, { width: `2em` }).append(
                         TAG(`input`, `centered only-pointer p0 m0 _master-check`).attr({ type:`checkbox` }).on(`click`, ev => {
                             ev.target.upFind(`form`).$(`.-item.-active`).map(item => item.$(`._check`)[0].checked = ev.target.checked)
                         })
                     )
-                    , DIV(`relative left bar`, { width: `calc(100% - 2.5em` }).app(
+                    , DIV(`relative left bar`, { width: `calc(100% - 2.5em` }).append(
                         TAG(`input`, `row centered px`, { border: 'none' }).attr({
                             type: `search`
                             , placeholder: `Filter:`
@@ -2355,26 +2375,26 @@ function multilists() {
             ])
         )
         ;;
-        [].slice.call(sel.children).forEach(item => e.$(`.-stage`)[0].app(
+        [].slice.call(sel.children).forEach(item => e.$(`.-stage`)[0].append(
             DIV(`row flex only-pointer no-scrolls tile -item -active m0 p0`, {
                 borderBottom: `1px solid ${fw.palette.DARK2}`
                 , height: `2em`
-            }).app(
-                DIV(`relative bar`, { width: `2.5em` }).app(
+            }).append(
+                DIV(`relative bar`, { width: `2.5em` }).append(
                     TAG(`input`, `centered p0 m0 _check`).attr({
                         type:`checkbox`
                         , name: sel.attributes[`name`]?.value||``
                         , value: item.attributes[`value`]?.value||item.textContent||``
                     })
                 )
-            ).app(
+            ).append(
                 item.mime().addClass(`bar content-left ellipsis no-scrolls m0 px`).css({ width: `calc(100% - 2.5em)` })
             ).on(`click`, function() {
                 this.$(`[type=checkbox]`)[0].click()
                 if(!this.$(`[type=checkbox]`)[0].checked) $(`._master-check`)[0].checked = false
             })
         ))
-        sel.parent().pre(e)
+        sel.parent().prepend(e)
         e.$(`item`).forEach(item => {
             if([ `true`, `selected`, `checked`, `default`, `1`, 1 ].indexOf(item.attributes[`selected`]?.value.toLowerCase())+1) item.dispatchEvent(new Event(`click`))
         })
@@ -2415,11 +2435,11 @@ function dropdowns() {
             display:`none`
             , top: `.5em`
             , minWidth: '10em'
-        }).app(
-            DIV(`row`, { height: `${h}px` }).app(
+        }).append(
+            DIV(`row`, { height: `${h}px` }).append(
                 SPAN(`arrow_drop_up`, `icon ${float}`, { color: bg, fontSize: `4em`, transform: `translate(${float!=`left` ? `` : `-`}.25em, 0)` })
             )
-        ).app(
+        ).append(
             DIV(`row scrolls -stage`, {
                 borderRadius: `.25em`
                 , background: bg
@@ -2429,23 +2449,23 @@ function dropdowns() {
             })
         ).on(`mouseenter`, e => e.target.remClass(`_blured`)).on(`mouseleave`, e => e.target.addClass(`_blured`))
         ;;
-        e.app(
+        e.append(
             DIV(`row bar flex`)[float == `left` ? `pre` : `app`](
-                DIV(`relative bar`, { width: h + `px`, height: h + `px` }).app(
+                DIV(`relative bar`, { width: h + `px`, height: h + `px` }).append(
                     SPAN(icon, `icon centered only-pointer`, { fontSize:`1.75em` })
                 ).on(`click`, e => menu.remClass(`_blured`).appear())
             )[float == `left` ? `pre` : `app`](
-                DIV(`relative bar`, { width:`calc(100% - ${h}px)`, height: h + `px` }).app(
+                DIV(`relative bar`, { width:`calc(100% - ${h}px)`, height: h + `px` }).append(
                     SPAN(label, `centered ellipsis content-${float}`, { width: `calc(100% - 2em)` })
                 )
             )
         )
-        ;[].slice.call(dp.children).forEach(item => menu.on(`click`, _ => menu.hide()).$(`.-stage`)[0].app(
+        ;[].slice.call(dp.children).forEach(item => menu.on(`click`, _ => menu.hide()).$(`.-stage`)[0].append(
             item.mime().addClass(`row px2 pointer content-left ellipsis`)
         ))
         if(float == 'left') menu.css({ left:0 })
             else menu.css({ right: 0 })
-        dp.parent().css({ padding: 0 }).pre(e.app(menu))
+        dp.parent().css({ padding: 0 }).prepend(e.append(menu))
         dp.remove()
     })
 }
@@ -2472,7 +2492,7 @@ function switches() {
             if (change) try { eval(change)(ev) } catch(err) { console.trace(err) }
         })
         ;;
-        dp.parent().app(e)
+        dp.parent().append(e)
         dp.remove()
         e.setAttribute('value', state ? 0 : 1)
         e.click()
@@ -2491,7 +2511,7 @@ function tooltips() {
             , display: "none"
             , zIndex: 9999
         })
-        $("#app").app(ttip)
+        $("#app").append(ttip)
         // ttip.on("mouseleave", e => e.target.hide())
     }
     $(".-tooltip").forEach(tip => {
@@ -2537,11 +2557,11 @@ function tileEffect(selector=null, clr=null) {
                     , transformOrigin: "center center"
                     , transform: "translate(-50%, -50%) scale(.1)"
                 })
-                , wrap = DIV(`absolute wrap zero`).app(
-                    DIV(`relative left wrap zero no-scrolls`).app(bubble)
+                , wrap = DIV(`absolute wrap zero`).append(
+                    DIV(`relative left wrap zero no-scrolls`).append(bubble)
                 )
                 ;;
-                e.target.app(wrap)
+                e.target.append(wrap)
                 await fw.sleep(10)
                 await bubble.stop().anime({ transform: "translate(-50%, -50%) scale(1.75)", filter:`opacity(0)` })
                 wrap.remove()

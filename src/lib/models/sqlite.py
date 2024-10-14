@@ -5,6 +5,7 @@ import traceback
 from utils.basic_traits import class_t
 from utils.log import log
 
+
 class SQLiteDB:
     _Database = os.getenv("DB_DATABASE")
     _Table = None

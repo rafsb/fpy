@@ -1,9 +1,9 @@
 (function(app, args){
 
     const
-    d = DIV('fixed zero wrap bg').app(
-        TAG('form', 'col-2 centered fg', { padding:`1em`, borderRadius:`.5em`, boxShadow:`0 0 .5em {{dark3}}` }).attr({ action:'javascript:void(0)' }).app([
-            TAG('header', 'row', { marginBottom: `2em` }).app([
+    d = DIV('fixed zero wrap bg').append(
+        TAG('form', 'col-2 centered fg', { padding:`1em`, borderRadius:`.5em`, boxShadow:`0 0 .5em {{dark3}}` }).attr({ action:'javascript:void(0)' }).append([
+            TAG('header', 'row', { marginBottom: `2em` }).append([
                 IMG('assets/img/logo.png', 'left', { height:'3em', width:'3em', borderRadius:'50%', boxShadow:'0 0 1em {{dark2}}' })
                 , SPAN('LOGIN', 'col-6 right content-right', { 
                     color:'white'
@@ -12,13 +12,13 @@
                     , backgroundImage: 'linear-gradient(to left, {{belize_hole}}44, transparent)' 
                 })
             ])
-            , DIV('row').app(
+            , DIV('row').append(
                 TAG('input', 'row').attr({ name:'user', type:'user', placeholder:'Usuário' })
             )
-            , DIV('row', { margin: "1em 0"}).app(
+            , DIV('row', { margin: "1em 0"}).append(
                 TAG('input', 'row -hash').attr({ name:'pswd', type:'password', placeholder:'Senha' })
             )
-            , DIV('row').app(
+            , DIV('row').append(
                 TAG('input', 'row only-pointer', {
                     background:'{{belize_hole}}'
                     , color: 'white'
@@ -41,16 +41,16 @@
                     })
                 })
             )
-            , DIV('row content-center').app(
+            , DIV('row content-center').append(
                 SPAN('OU', null, { color:'{{SILVER}}44', padding:'1em' })
             )
-            , DIV('row').app(
+            , DIV('row').append(
                 TAG('input', 'row', { background:'{{silver}}22', color:"{{silver}}" }).attr({ name:'token', type:'text', placeholder:'Chave' })
             )
         ])
     )
     ;;
 
-    $('#app')[0].empty().app(d)
+    $('#app')[0].empty().append(d)
 
 })

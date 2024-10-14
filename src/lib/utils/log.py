@@ -1,58 +1,91 @@
 import os
-import logging
-from logging.handlers import RotatingFileHandler
+import jsonpickle
 from datetime import datetime
+from utils.basic_traits import ClassT
 
-VERBOSE = int(os.getenv("VERBOSE", 0))
-LOG_LEVEL = int(os.getenv("LOG_LEVEL", logging.INFO))
+ELevels = ClassT(**{
+    'E_CRITICAL'  : 6,
+    'E_FATAL'     : 5,
+    'E_ERROR'     : 4,
+    'E_WARN'      : 3,
+    'E_INFO'      : 2,
+    'E_DEBUG'     : 1,
+    'E_ALL'       : 0
+})
+
+VERBOSE = getattr(ELevels, os.getenv("VERBOSE", 'E_ALL'), 'E_ALL')
+LOG_LEVEL = getattr(ELevels, os.getenv("LOG_LEVEL", 'E_WARN'), 'E_WARN')
 
 
 class Logger:
 
-    LOG_LEVELS = {
-        'INFO': logging.INFO,
-        'WARN': logging.WARNING,
-        'ERROR': logging.ERROR,
-    }
+    def __init__(self, name='app', max_lines=1024):
 
-    def __init__(self, name='app', filename=None, log_level=logging.INFO, max_lines=1024, backup_count=5):
-        self.name = name
-        self.filename = filename or 'app.log'
-        self.log_level = log_level
+        if not name: name = 'app'
+
         self.max_lines = max_lines
-        self.backup_count = backup_count
+        self.log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'var', 'tmp', 'logs'))
+        os.makedirs(self.log_dir, exist_ok=True)
 
-        log_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'var', 'tmp', 'logs')
-        os.makedirs(log_dir, exist_ok=True)
-        log_path = os.path.join(log_dir, self.filename)
+        # Create handlers for each log level
+        self.create_file_handler('%s_info.log' % name)
+        self.create_file_handler('%s_warn.log' % name)
+        self.create_file_handler('%s_error.log' % name)
+        self.create_file_handler('%s_debug.log' % name)
+        self.create_file_handler('%s_critical.log' % name)
 
-        self.logger = logging.getLogger(self.name)
-        self.logger.setLevel(self.log_level)
+        # Debug statement to check log directory
+        self.debug(f"Log directory: {self.log_dir}")
 
-        handler = RotatingFileHandler(log_path, maxBytes=self.max_lines * 100, backupCount=self.backup_count)
-        handler.setLevel(self.log_level)
+    def create_file_handler(self, filename):
+        log_path = os.path.join(self.log_dir, filename)
+        if not os.path.exists(log_path):
+            open(log_path, 'w').close()
 
-        formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-        handler.setFormatter(formatter)
+    def stream(self, message, level=ELevels.E_INFO):
+        from app import socket
+        socket.emit("message", jsonpickle.encode({ "stream": message, "ts": datetime.now(), "level": level }))
 
-        self.logger.addHandler(handler)
-
-        if VERBOSE:
-            console_handler = logging.StreamHandler()
-            console_handler.setFormatter(formatter)
-            self.logger.addHandler(console_handler)
+    def log(self, message, level=ELevels.E_INFO):
+        if level >= VERBOSE:
+            print("%s [%s]" % (datetime.now(), level))
+            print(message)
+        if level >= LOG_LEVEL:
+            tmp_name = 'info'
+            for k, v in ELevels.__dict__.items():
+                if v == level:
+                    tmp_name = k.lower()
+                    break
+            log_name = '%s_%s.log' % ('app', tmp_name)
+            log_path = os.path.join(self.log_dir, log_name)
+            with open(log_path, 'a+') as f:
+                f.seek(0)
+                lines = f.readlines()
+                if len(lines) >= self.max_lines:
+                    lines = lines[-self.max_lines + 1:]
+                lines.append("%s [%s] %s\n" % (datetime.now(), level, message))
+                f.seek(0)
+                f.truncate()
+                f.writelines(lines)
 
     def info(self, message):
-        self.logger.info(message)
+        self.log(message, ELevels.E_INFO)
 
     def warn(self, message):
-        self.logger.warning(message)
+        self.log(message, ELevels.E_WARN)
 
     def error(self, message):
-        self.logger.error(message)
+        self.log(message, ELevels.E_ERROR)
+
+    def debug(self, message):
+        self.log(message, ELevels.E_DEBUG)
+
+    def critical(self, message):
+        self.log(message, ELevels.E_CRITICAL)
 
     @classmethod
-    def get_logger(cls, name='app', filename=None, log_level=logging.INFO, max_lines=1024, backup_count=5):
-        return cls(name, filename, log_level, max_lines, backup_count)
+    def get_logger(cls, name='app', **args):
+        return cls(name, **args)
+
 
 log = Logger()

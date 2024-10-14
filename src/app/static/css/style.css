@@ -1,54 +1,61 @@
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: .5em; }
-::-webkit-scrollbar-track { background: #0002 }
-::-webkit-scrollbar-thumb { background: #000a; border:none; width:.5em;}
+::-webkit-scrollbar-track { background: #4b4b4b }
+::-webkit-scrollbar-thumb { background: lightgray; border:none; width:.5em;}
 
 table {
     border-collapse: collapse;
-    width: 100%;
-    table-layout: fixed;
-}
-
-tr {
-    width:100% !important;
+    min-width: 100%;
+    /* table-layout: fixed; */
 }
 
 tr:hover {
-    box-shadow: inset 0 0 .25em black;
+    background: lightgray;
+    color: black;
+}
+
+
+th {
+	resize: horizontal;
 }
 
 td, th {
-    padding: .5em;
-    word-wrap:break-word;
+    padding: .25em;
+    word-wrap: normal;
     white-space: normal;
+    text-overflow: ellipsis;
 }
 
 th {
     resize: horizontal !important;
 }
 
-tr:nth-child(odd), td:nth-child(even), th:nth-child(even), .cell:nth-child(even) {
-    background: #fff1;
+.table-row:nth-child(odd), td:nth-child(odd), th:nth-child(odd), .cell:nth-child(odd) {
+    background: #ffffff08;
 }
 
-tr:nth-child(even), td:nth-child(odd), th:nth-child(odd), .cell:nth-child(odd) {
-    background: #0001;
+.table-row:nth-child(even), td:nth-child(even), th:nth-child(even), .cell:nth-child(even) {
+    background: #00000008;
 }
 
-input, textarea, select {
-    font-size: 1em;
-    padding:.5em 1em;
-    border-radius: .5em;
+.table-row.show.checked {
+    background: darkgray;
+    font: black;
 }
+
+.table-row.show.checked input, .table-row.show.checked select {
+    background: lightgray;
+}
+
 
 @media only screen and (max-width: 1920px) {
     /* body {
-        font-size: .75em;
+        font-size: 1em;
     } */
 }
 
 @media only screen and (max-width: 1366px) {
     /* body {
-        font-size: 10px;
+        font-size: .75em;
     } */
 }

@@ -1,27 +1,95 @@
 <template>
     <!-- HOME -->
-    <main class="wrap">
-        <div class="wrap flex">
-            <nav class="col-3 pv4 pl4">
-                <div
-                    id="main-menu"
-                    class="wrap blur"
-                    style="border-radius: 1em 0 0 1em;background: {{font}}44;color:{{foreground}};border:1px solid {{foreground}}44"
-                ></div>
-            </nav>
-            <div class="col-9 pv4 pr4">
-                <div
-                    id="main-stage"
-                    class="wrap blur"
-                    style="border-radius: 0 1em 1em 0;background: {{foreground}}44"
-                ></div>
+    <div id="home" class='fixed wrap no-scrolls'>
+        <header class="row left px2">
+            <span class="left only-pointer mh -logo"><img src="img/logo-dark.png" class="left mh"></span>
+            <span class="left px">OPS | One Page Stock</span>
+            <div class="right">
+                <label class="left px mt" style="opacity: .64;">TEMA:</label>
+                <select class='left themes mh'></select>
+                <span class="left icon px mh" style="transform: scale(1.5);">help</span>
             </div>
+        </header>
+        <div class="row px no-scrolls">
+            <nav class="row ph bg -tabs">
+                <div class="left pointer fg ft -tab" data-action="overview">Tabela</div>
+                <div class="left pointer fg ft -tab" data-action="mainchart">Página inicial</div>
+                <div class="left pointer fg ft avoid-pointer -tab" data-action="userview">Meu painel</div>
+            </nav>
+            <main class="row no-scrolls px fg -stage"></main>
         </div>
-    </main>
-
+    </div>
+    <style>
+        #home > header {
+            overflow:visible;
+            z-index:10;
+            background: {{background}};
+            color: {{font}};
+        }
+        #home > header > span.-logo > img {
+            height:1.75em;
+        }
+        #home > header select.themes {
+            width: 16em;
+        }
+        #home .-tab {    
+            border-radius: .5em .5em 0 0;
+            margin: 0 .125em 0 .25em;
+            padding: .5em 1em;
+            opacity: .32
+        }
+        #home .-tab.selected {
+            opacity: 1
+        }
+        #home main.-stage {
+            height: calc(100vh - 6em);border-radius:.5em
+        }
+    </style>
     <script>
-        fw.load("views/components/menu.htm", { target: $("#main-menu")[0] })
-        bootloader.ready('home')
-        setTimeout(_ => bootloader.ready('ready'), AL * 2)
+        (function(){
+
+            /**
+             * HOME MAGIC
+             */
+            $(`#home > header > span.-logo`).on(`click`, _ => $('._lightbox,._window,._dialog').disappear(null, true))
+            
+            const
+            tabs_stage = $(`#home .-tabs`).at() 
+            ;;
+            
+            tabs_stage.$(`.-tab`).on(`mouseenter`, e => {
+                tabs_stage.$(`.-tab`).not(e.target).anime({ opacity: .64 })
+                e.target.stop().anime({ opacity: 1 })
+            }).on(`click`, e => {
+                if(e.target.classList.contains(`avoid-pointer`)) return fw.warning('Esta funcionalidade não está disponível no momento')
+                loading.on()
+                $('._menu').hide()
+                tabs_stage.$(`.-tab`).not(e.target).remClass(`selected`)
+                e.target.addClass(`selected`)
+                setTimeout(_ => fw.exec(`components/${e.target.dataset.action}`), AL)
+            })[0].click()
+            
+            tabs_stage.on(`mouseleave`, function() {
+                tabs_stage.$(`.-tab`).stop().anime({ opacity:.32}) 
+                tabs_stage.$(`.-tab.selected`).stop().anime({ opacity:1}) 
+            })
+
+            const sel = $(`#home select.themes`)[0] ;;
+            sock('themes.list', res => sel.append([
+                ... res.map(theme_name => TAG('option').css({ color: '{{font}}', background: '{{foreground}}' }).attr({ value: theme_name }).html(theme_name.toUpperCase()))
+            ]) && ($(`#home select.themes`)[0].value = fw.theme))
+            ;;
+            sel.on('change', ev => { 
+                const tmp_tn = fw.storage('theme') ;;
+                if(tmp_tn != ev.target.value) {
+                    fw.storage('theme', ev.target.value)
+                    location.reload()
+                }
+            })
+
+            fw.onSocketBroadcast.add(fw.notify)
+            bootloader.ready("home")
+            
+        })()
     </script>
 </template>

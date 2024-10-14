@@ -130,6 +130,15 @@ item {
 	display: inline-block;
 }
 
+table {
+	font-size: 1em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	padding: .5em;
+	margin: 0;
+}
+
 .view {
 	width: 100vw;
 	height: 100vh;
@@ -653,8 +662,6 @@ item {
 		padding: 10%;
 	}
 
-	.bar,
-	.ht-full,
 	.ht-full-min,
 	.ht-full-max,
 	.ht-2third,
@@ -774,7 +781,6 @@ modal,
 	height: 100%;
 	top: 0;
 	left: 0;
-	padding: 0;
 	overflow-y: auto;
 }
 
@@ -787,6 +793,7 @@ modal,
 .ht-full,
 .hf {
 	height: 100%;
+	overflow-y: auto;
 }
 
 .bg-wide {
@@ -848,7 +855,8 @@ blur {
 }
 
 .avoid-cursor {
-	pointer-events: none !important
+	pointer-events: none !important;
+	cursor: not-allowed;
 }
 
 .inverted {
@@ -932,24 +940,17 @@ blur {
 	min-width: .5em
 }
 
-[type='text'],
-[type='search'],
-[type='number'],
-[type='button'],
-[type='submit'],
+input,
 select,
 textarea,
-button {
+button { 	
+	font-size: 1em;
 	font-family: inherit;
 	color: inherit;
 	border: 1px solid lightgray;
-	border-radius: .5em;
-	padding: .5em 1em;
+	border-radius: .25em;
 	outline: none;
-}
-
-.input::placeholder {
-	opacity: .6;
+	height: 2em;
 }
 
 .ellipsis {

@@ -4,7 +4,7 @@ import jsonpickle as json
 from datetime import datetime, date
 
 
-class ClassT(dict):
+class ClassT(object):
 
     _kc = ['id']
     _bl = ['_Cursor']
@@ -59,9 +59,15 @@ class ClassT(dict):
     def raw(self):
         return self._get_attributes().items()
 
-    def attrs(self, bl=[]):
+    def attrs(self, bl=[], lcase=False):
         bl = bl + self.blacklisted() if bl else self.blacklisted()
-        attrs = {k: v for k, v in self.__dict__.items() if k not in bl and not k.startswith('_')}
+        attrs = {
+            k.strip()
+            if lcase is False
+            else k.strip().lower(): (v.strip() if isinstance(v, str) else (v if v != '' else None))
+            for k, v in self.__dict__.items()
+            if k not in bl and not k.startswith('_')
+        }
         return attrs
 
     def classname(self):
@@ -125,16 +131,16 @@ class SingletonT(ClassT):
 
 class ResponseT(ClassT):
 
-    def __init__(self, cols=[], items=[], **args):
+    def __init__(self, cols=[], rows=[], **args):
         self.cols = cols
-        self.items = items
+        self.rows = rows
         super().__init__(**args)
 
     def dict(self):
         try:
-            return {"cols": self.cols, "items": [item.attrs() for item in self.items]}
+            return {"cols": self.cols, "rows": [item.attrs() for item in self.rows]}
         except Exception:
-            return {"cols": self.cols, "items": self.items}
+            return {"cols": self.cols, "rows": self.rows}
 
 
 class StaticCast:

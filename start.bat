@@ -1,1 +1,2 @@
-.\venv\Scripts\waitress-serve.exe --port=7000 app:app 
+Get-ChildItem -Recurse -Directory -Filter "__pycache__" | Remove-Item -Recurse -Force
+.\venv\Scripts\python.exe app.py

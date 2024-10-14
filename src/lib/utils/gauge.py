@@ -1,7 +1,7 @@
 import os
 
 
-verbose = int(os.getenv("VERBOSE", 3))
+verbose = os.getenv("VERBOSE")
 
 
 def gauge(p, prefix='', suffix='', length=32, fill='█', verbose=2):
@@ -24,7 +24,7 @@ def gauge(p, prefix='', suffix='', length=32, fill='█', verbose=2):
     bar = fill * filled_length + '-' * (length - filled_length)
     percentage = int(p * 100)
     msg = f'\r{prefix} |{bar}| {percentage:>3}% {suffix}'
-    if verbose > 1:
+    if verbose:
         print(msg, end='\r')
         if p == 1:
             print()

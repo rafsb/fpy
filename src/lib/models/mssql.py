@@ -2,8 +2,9 @@ import os
 import re
 import pyodbc
 import traceback
-from utils.basic_traits import class_t
-from utils.log import log
+from utils.basic_traits import ClassT
+from utils.log import Logger
+
 
 class MSSQL:
     _Server = os.getenv("DB_SERVER")
@@ -29,8 +30,8 @@ class MSSQL:
         try:
             connection = pyodbc.connect(self.conn_str, autocommit=True)
             return connection
-        except Exception as e:
-            log.error(f"Error connecting to the database: {e}")
+        except:
+            Logger.error(f"Error connecting to the database: {self.conn_str}")
             return None
 
     def execute_query(self, query):
@@ -38,20 +39,20 @@ class MSSQL:
             cursor = self.connection.cursor()
             res = cursor.execute(query)
             self.connection.commit()
-            return class_t(status=True, res=res)
-        except Exception as e:
-            log.error(f"Error executing query: {traceback.format_exc()}")
-            return class_t(status=False, res=None)
+            return ClassT(status=True, res=res)
+        except:
+            Logger.error(f"Error executing query: {traceback.format_exc()}")
+            return ClassT(status=False, res=None)
 
     def fetch(self, query):
         try:
             cursor = self.connection.cursor()
             cursor.execute(query)
             res = cursor.fetchall()
-            return class_t(status=True if len(res) > 0 else False, res=res)
-        except Exception as e:
-            log.error(f"Error fetching records: {traceback.format_exc()}")
-            return class_t(status=False, res=None)
+            return ClassT(status=True if len(res) > 0 else False, res=res)
+        except:
+            Logger.error(f"Error fetching records: {traceback.format_exc()}")
+            return ClassT(status=False, res=None)
 
     def upsert(self, entity):
         res = self.execute_query(entity.update_query())
@@ -87,8 +88,8 @@ class MSSQL:
                 sql_commands = re.split(r'\s+GO\s+', file.read(), flags=re.MULTILINE)
                 for sql in sql_commands:
                     if sql.strip():
-                        log.info(f"Executing SQL command: {sql.strip()}")
+                        Logger.info(f"Executing SQL command: {sql.strip()}")
                         res.append(self.execute_query(sql.strip()))
         else:
-            log.error(f"Initialization file not found: {filepath}")
+            Logger.error(f"Initialization file not found: {filepath}")
         return res

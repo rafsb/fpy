@@ -1,10 +1,7 @@
-import os
 import traceback
-from time   import time
-from .gauge import gauge
-
-
-VERBOSE = int(os.getenv("VERBOSE", 0))
+from time import time
+from utils.gauge import gauge
+from utils.log import log
 
 
 def merge(new_data_list, db_data_list, delete_if_not_exists=True) :
@@ -18,7 +15,7 @@ def merge(new_data_list, db_data_list, delete_if_not_exists=True) :
     newdatadict = {}
     to_insert   = []
     to_update   = []
-    items_to_delete = []
+    to_delete = []
 
     temp_class = new_data_list[0].__class__ if len(new_data_list) else ""
     if not temp_class:
@@ -45,7 +42,7 @@ def merge(new_data_list, db_data_list, delete_if_not_exists=True) :
 
             if tempnewdata is None:
                 if delete_if_not_exists:
-                    items_to_delete.append(d)
+                    to_delete.append(d)
                     deleted += 1
             elif tempnewdata.row_hash() != d.row_hash():
                 tempnewdata.id = d.id
@@ -63,19 +60,18 @@ def merge(new_data_list, db_data_list, delete_if_not_exists=True) :
         for _, d in newdatadict.items():
             to_insert.append(d)
 
-        if len(items_to_delete):
-            temp_class().bulk_del(items=items_to_delete)
+        if len(to_delete):
+            temp_class().bulk_del(rows=to_delete)
 
         if len(to_insert):
-            temp_class().bulk_insert(items=to_insert)
+            temp_class().bulk_insert(rows=to_insert)
 
         if len(to_update):
-            temp_class().bulk_update(items=to_update)
+            temp_class().bulk_update(rows=to_update)
 
     except:
-        if VERBOSE > 1:
-            print(f'Error merging {temp_class_name}')
-            traceback.print_exc()
+        log.error(traceback.format_exc())
 
-    if VERBOSE == 1: print("[%s] Kept: %s Changed: %s Deleted: %s New: %s in %.2f seconds" % (temp_class_name, kept, changed, deleted, len(newdatadict), time() - start_time))
+    log.info("[%s] Kept: %s Changed: %s Deleted: %s New: %s in %.2f seconds" % (temp_class_name, kept, changed, deleted, len(newdatadict), time() - start_time))
+
     return True

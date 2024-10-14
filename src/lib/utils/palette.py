@@ -307,7 +307,6 @@ class Palette(ClassT):
         else:
             return Palette
 
-
     def material(color=None, shade=500):
         if color: return getattr(Palette["MATERIALS"], color, 'BLACK')[str(shade)]
         res = ClassT()
