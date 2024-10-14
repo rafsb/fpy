@@ -12,9 +12,9 @@ class Theme :
     @staticmethod
     def load(name) :
         res = {}
-        try :
+        try:
             with open(os.path.join(THEMES_FOLDER, f"{name if name else 'light'}.theme")) as file : res = jout(file.read())
-        except :
+        except:
             log.error(f"Error loading theme: {name if name else 'light'}")
         return res
 
