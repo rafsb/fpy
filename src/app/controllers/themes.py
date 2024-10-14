@@ -7,15 +7,15 @@ from utils.log import log
 THEMES_FOLDER = os.path.join(os.path.dirname(__file__), "..", "static", "themes")
 
 
-class Theme :
+class themes :
 
     @staticmethod
-    def load(name) :
+    def load(args={}) :
         res = {}
-        try:
-            with open(os.path.join(THEMES_FOLDER, f"{name if name else 'light'}.theme")) as file : res = jout(file.read())
-        except:
-            log.error(f"Error loading theme: {name if name else 'light'}")
+        try :
+            with open(os.path.join(THEMES_FOLDER, f"{args.get('theme', 'ball')}.theme")) as file : res = jout(file.read())
+        except :
+            log.error(f"Error loading theme: {args.get('theme', 'ball')}")
         return res
 
     @staticmethod
@@ -27,17 +27,15 @@ class Theme :
         return files
 
     @staticmethod
-    def init(name) :
-        return Theme.load(name)
+    def init(args={}) :
+        return themes.load(args)
 
 
 def register(app, args=None) :
     @app.route('/theme', methods=['GET', 'POST'])
     def _theme() :
-        if request.method == 'GET' : name = request.args.get('name', 'light')
-        if request.method == 'POST' : name = jout(request.data).get('theme', 'light')
-        return Theme.load(name)
+        return themes.load(request.args if request.method == 'GET' else request.data)
 
     @app.route('/themes', methods=['GET', 'POST'])
     def _themes() :
-        return Theme.list()
+        return themes.list()
