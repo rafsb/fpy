@@ -7,10 +7,12 @@ import re
 import sys
 import importlib
 import traceback
+import subprocess
 import jsonpickle
 from dotenv import load_dotenv
 from flask import Flask, send_from_directory
 from flask_socketio import SocketIO
+from apscheduler.schedulers.background  import BackgroundScheduler as scheduler
 
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'src', 'app')))
@@ -64,6 +66,17 @@ def handle_message(msg):
         except:
             print(traceback.format_exc())
     socket.emit("message", jsonpickle.encode(res))
+
+if ENV.lower() != 'dev':
+    exec_arr = [
+        "python.exe"
+        , "cli.py"
+        , "inventory_aging"
+        , "sync"
+    ]
+    sched = scheduler()
+    sched.add_job(lambda: subprocess.run(exec_arr), 'cron', hour=4, minute=0, misfire_grace_time=64)
+    sched.start()
 
 
 if __name__ == '__main__':

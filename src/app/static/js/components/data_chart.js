@@ -31,7 +31,8 @@
                 , css: { 
                     stroke: colors[i % colors.length]
                     , 'stroke-width': config.strokeWidth || Math.min(pace / 2, fw.em2px(2))
-                    , 'stroke-linecap': 'round'
+                    , 'stroke-linecap': 'butt'
+                    // , transform: 'skew(0deg, 45deg)'
                 }
             })
             // bottom background

@@ -16,6 +16,7 @@ class Palette(ClassT):
     GREEN_SEA       = "#169F85"
     ICE_PINK        = "#CA179E"
     LIME            = "#BAF702"
+    MORNING_SKY     = "#4cffff"
     MIDNIGHT_BLUE   = "#27283D"
     NEPHRITIS       = "#30AD63"
     ORANGE          = "#F39C19"

@@ -36,8 +36,8 @@ DEBUG = false
         id = name.split("#")[1];
         name = name.split("#")[0] || "div";
     }
-    node = document.createElement(name).addClass(c).css(s)
-    if(t) node.html(t)
+    const node = document.createElement(name).addClass(c).css(s) ;;
+    if (t) node.html(t)
     if (id) node.id = id
     return node
 }
@@ -103,17 +103,16 @@ blend(Number.prototype, {
     , ceil: function(){ return Math.ceil(this) }
     , floor: function(){ return Math.floor(this) }
     , nerdify: function (fixed=1) {
-        const pointer = this < 0 ;;
-        let n = Math.abs(this) ;;
-        return (pointer ? '-' : '') + (n >= 1000000000000 ? ((n / 1000000000000).toFixed(fixed)) + "tri" : (
-            n >= 1000000000 ? ((n / 1000000000).toFixed(fixed)) + "bi" : (
-                n >= 1000000 ? ((n / 1000000).toFixed(fixed)) + "mi" : (
-                    n >= 1000 ? ((n / 1000).toFixed(fixed)) + "k" : n.toFixed(fixed)
-                )
-            )
-        ))
+        if (isNaN(this)) return "0";
+        const units = ["", "k", "mi", "bi", "tri", "quad", "quint", "sext", "sept", "oct", "non", "dec"] ;;
+        let n = Math.abs(this), unitIndex = 0 ;;
+        while (n >= 1000 && unitIndex < units.length - 1) {
+            n /= 1000;
+            unitIndex++;
+        }
+        return (this < 0 ? '-' : '') + n.toFixed(fixed) + units[unitIndex];
     }
-});
+})
 
 blend(NodeList.prototype, {
     array: function () {
@@ -125,7 +124,7 @@ blend(NodeList.prototype, {
     , extract: function (f) {
         return this.array().extract(f)
     }
-});
+})
 
 blend(HTMLCollection.prototype, {
     array: function () {
@@ -226,14 +225,18 @@ blend(HTMLFormElement.prototype, {
 blend(Element.prototype, {
     at: function () { return this }
     , anime: function (obj, len = ANIMATION_LENGTH, delay = 0, trans = null) {
-        const el = this;;
-        return new Promise(function (ok) {
+        const el = this;
+        return new Promise(pass => {
             len /= 1000;
             trans = trans ? trans : "ease";
-            el.style.transition = "all " + len.toFixed(2) + "s " + trans;
-            el.style.transitionDelay = (delay ? delay / 1000 : 0).toFixed(2) + "s";
-            for (let i in obj) el.style[i] = obj[i];
-            setTimeout(_ => ok(el), len * 1000 + delay)
+            el.style.transition = `all ${len.toFixed(2)}s ${trans}`;
+            el.style.transitionDelay = `${(delay ? delay / 1000 : 0).toFixed(2)}s`;
+            const transitionEndHandler = () => {
+                el.removeEventListener('transitionend', transitionEndHandler)
+                pass(el)
+            }
+            el.addEventListener('transitionend', transitionEndHandler)
+            for (let i in obj) el.style[i] = obj[i]
         })
     }
     , mime: function () {
@@ -641,7 +644,7 @@ blend(Array.prototype, {
     }
     , progress() {
         const me = this ;;
-        return this.map((x, i) => i ? x/me[i-1] : 1)
+        return this.map((x, i) => i && me[i-1] ? x/me[i-1] : 1)
     }
     , max() {
         return Math.max(... this)
@@ -654,34 +657,34 @@ blend(Array.prototype, {
         return this.map(i => i/max)
     }
     , linear_interpolation(z) {
-        if(!z) return this[0] || null
-        // if(this[z]) return this[z]
-        let x0=0, x1=Number.MAX_SAFE_INTEGER ;;
+        if (z === undefined || z === null) return this[0] || null;
+        let x0 = 0, x1 = Number.MAX_SAFE_INTEGER;
         for (let i = 0; i < this.length; i++) {
             if (this[i] !== null && this[i] !== undefined) {
-                if(i<z) x0 = Math.max(x0, i)
-                if(i>z) x1 = Math.min(x1, i)
+                if (i < z) x0 = Math.max(x0, i);
+                if (i > z) x1 = Math.min(x1, i);
             }
         }
-        let y0 = this[x0]||0, y1 = this[x1]||0 ;;
-        return y0 + (y1 - y0) * ((z - x0) / (x1 - x0))
+        let y0 = this[x0] || 0, y1 = this[x1] || 0;
+        return y0 + (y1 - y0) * ((z - x0) / (x1 - x0));
     }
     , lagrange_interpolation(z) {
-        // if(this[z]) return this[z]
-        const x=[], y=[] ;;
+        const x = [], y = [];
         for (let i = 0; i < this.length; i++) {
             if (this[i] !== null && this[i] !== undefined) {
-                x.push(i)
-                y.push(this[i])
+                x.push(i);
+                y.push(this[i]);
             }
         }
-        let n = x.length, sum = 0 ;;
+        let n = x.length, sum = 0;
         for (let i = 0; i < n; i++) {
-            let term = y[i] ;;
-            for (var j = 0; j < n; j++) if(j!==i) term = term * (z - x[j]) / (x[i] - x[j])
-            sum += term
+            let term = y[i];
+            for (let j = 0; j < n; j++) {
+                if (j !== i) term = term * (z - x[j]) / (x[i] - x[j]);
+            }
+            sum += term;
         }
-        return sum
+        return sum;
     }
     , fillNulls(interpolation=`linear`) {
         const nulls = this.map((x, i) => x === null ? i : null).filter(i=>i) ;;
@@ -1269,65 +1272,72 @@ class fobject extends Object {
 class fw {
 
     static palette = {
-        ALIZARIN: "#E84C3D"
-        , AMETHYST: "#9C56B8"
-        , ASBESTOS: "#7E8C8D"
-        , BELIZE_HOLE: "#2A80B9"
-        , BURRO_QNDO_FOJE: "#8C887B"
-        , CARROT: "#E67D21"
-        , CLOUDS: "#ECF0F1"
-        , CONCRETE: "#95A5A5"
-        , EMERALD: "#53D78B"
-        , GREEN_SEA: "#169F85"
-        , ICE_PINK: "#CA179E"
-        , LIME: "#BAF702"
-        , MIDNIGHT_BLUE: "#27283D"
-        , NEPHRITIS: "#30AD63"
-        , ORANGE: "#F39C19"
-        , PASTEL: "#FEC200"
-        , PETER_RIVER: "#2C97DD"
-        , POMEGRANATE: "#C0382B"
-        , PUMPKIN: "#D35313"
-        , PURPLE_PINK: "#8628B8"
-        , SILVER: "#BDC3C8"
-        , SUN_FLOWER: "#F2C60F"
-        , TEAL: "#008080"
-        , TIFFANY: "#0abab5"
-        , TURQUOISE: "#00BE9C"
-        , WET_ASPHALT: "#383C59"
-        , WISTERIA: "#8F44AD"
+        ALIZARIN            : "#E84C3D"
+        , AMETHYST          : "#9C56B8"
+        , ASBESTOS          : "#7E8C8D"
+        , BELIZE_HOLE       : "#2A80B9"
+        , BURRO_QNDO_FOJE   : "#8C887B"
+        , CARROT            : "#E67D21"
+        , CLOUDS            : "#ECF0F1"
+        , CONCRETE          : "#95A5A5"
+        , EMERALD           : "#53D78B"
+        , GREEN_SEA         : "#169F85"
+        , ICE_PINK          : "#e6187c"
+        , LIME              : "#BAF702"
+        , MORNING_SKY       : "#4cffff"
+        , MIDNIGHT_BLUE     : "#27283D"
+        , NEPHRITIS         : "#30AD63"
+        , ORANGE            : "#F39C19"
+        , PASTEL            : "#FEC200"
+        , PETER_RIVER       : "#2C97DD"
+        , POMEGRANATE       : "#C0382B"
+        , PUMPKIN           : "#D35313"
+        , PURPLE_PINK       : "#8628B8"
+        , SILVER            : "#BDC3C8"
+        , SUN_FLOWER        : "#F2C60F"
+        , TEAL              : "#008080"
+        , TIFFANY           : "#0abab5"
+        , TURQUOISE         : "#00BE9C"
+        , WET_ASPHALT       : "#383C59"
+        , WISTERIA          : "#8F44AD"
+        , ROYAL_BLUE        : "#4169e1"
+        , INDIGO            : "#4b0082"
+        , ELECTRIC_PURPLE   : "#8a2be2"
+        , FUCHSIA           : "#ff00ff"
+        , DEEP_PINK         : "#ff1493"
+        , PINK_SHOCK        : "#ff69b4"
         /*** SYSTEM***/
-        , BACKGROUND: "#FFFFFF"
-        , FOREGROUND: "#ECF1F2"
-        , FONT: "#2C3D4F"
-        , FONTINVERTED: "#F2F2F2"
-        , FONTBLURED: "#7E8C8D"
-        , SPAN: "#2980B9"
-        , DISABLED: "#BDC3C8"
-        , DARK1: "rgba(0,0,0,.08)"
-        , DARK2: "rgba(0,0,0,.16)"
-        , DARK3: "rgba(0,0,0,.32)"
-        , DARK4: "rgba(0,0,0,.64)"
-        , LIGHT1: "rgba(255,255,255,.08)"
-        , LIGHT2: "rgba(255,255,255,.16)"
-        , LIGHT3: "rgba(255,255,255,.32)"
-        , LIGHT4: "rgba(255,255,255,.64)"
+        , BACKGROUND        : "#FFFFFF"
+        , FOREGROUND        : "#ECF1F2"
+        , FONT              : "#2C3D4F"
+        , FONTINVERTED      : "#F2F2F2"
+        , FONTBLURED        : "#7E8C8D"
+        , SPAN              : "#2980B9"
+        , DISABLED          : "#BDC3C8"
+        , DARK1             : "rgba(0,0,0,.08)"
+        , DARK2             : "rgba(0,0,0,.16)"
+        , DARK3             : "rgba(0,0,0,.32)"
+        , DARK4             : "rgba(0,0,0,.64)"
+        , LIGHT1            : "rgba(255,255,255,.08)"
+        , LIGHT2            : "rgba(255,255,255,.16)"
+        , LIGHT3            : "rgba(255,255,255,.32)"
+        , LIGHT4            : "rgba(255,255,255,.64)"
         /*** candy */
-
-        , CANDY_RED: "#FABFB7"
-        , CANDY_YELLOW: "#FDF9D4"
-        , CANDY_ORANGE: "#FFDA9E"
-        , CANDY_GRAY: "#C4C6C8"
-        , CANDY_BLUE: "#B2E2F2"
+        , CANDY_RED         : "#FABFB7"
+        , CANDY_YELLOW      : "#FDF9D4"
+        , CANDY_ORANGE      : "#FFDA9E"
+        , CANDY_GRAY        : "#C4C6C8"
+        , CANDY_BLUE        : "#B2E2F2"
+        , CANDY_GREEN       : "#B2f2e2"
         /*** palette ***/
-        , WHITE: "#FFFFFF"
-        , BLACK: "#000000"
-        , CYAN:"#01F2F2"
-        , MAGENTA:"#E10085"
-        , YELLOW:"#F2DE00"
-        , RED:"#FF0000"
-        , GREEN:"#00FF00"
-        , BLUE:"#0000FF"
+        , WHITE             : "#FFFFFF"
+        , BLACK             : "#000000"
+        , CYAN              : "#01F2F2"
+        , MAGENTA           : "#E10085"
+        , YELLOW            : "#F2DE00"
+        , RED               : "#FF0000"
+        , GREEN             : "#00FF00"
+        , BLUE              : "#0000FF"
     }
 
     static rx(w, wrule=2, b="\\b", asrx=true, flags='guim'){
@@ -1477,6 +1487,9 @@ class fw {
 
     }
     static notify(message, colors = null) {
+
+        if(!document.body) return setTimeout(() => fw.notify(message, colors), 100)
+
         const 
         toast = document.createElement("div")
         , palette = fw.palette
@@ -1771,7 +1784,7 @@ class fw {
         if (!fn) fn = i => i;
         s = s || 0;
         e = e || s + 1;
-        for (let i = s; i != e; i += step) x.push(fn(i));
+        for (let i = s; step > 0 ? i <= e : i >= e; i += step) x.push(fn(i));
         return x;
     }
 
@@ -1871,12 +1884,16 @@ class fw {
                 fill: config.fill || 0,
                 count: config.count || 0,
                 nerd: config.nerd || false,
-                suffix: config.suffix || ""
+                suffix: config.suffix || "",
+                suffixOpacity: config.suffixOpacity || .32,
+                parse: config.parse || false
             };
 
-            let currentValue = parseFloat(target.value || target.text()) || 0;
+            let currentValue = target.value || target.text() || 0 ;;
+            if(isNaN(currentValue)) currentValue = currentValue.replace(/[^0-9.,]/g, '') || 0
+            currentValue = parseFloat(currentValue)
 
-            if (currentValue === value || !target) return;
+            if (currentValue === value || !target) return target.html((currentValue.toFixed(config.fixed) + (config.suffix||'')).replace(/[a-z%]+$/gi, `<b style="padding-left:.25em;opacity:${config.suffixOpacity || .32}">$&</b>`));
 
             currentValue += config.pace;
             target.value = currentValue;
@@ -1885,11 +1902,12 @@ class fw {
                 (config.direction && currentValue >= value) || 
                 (!config.direction && currentValue <= value)) {
                 target.value = value;
-                target.text((config.nerd ? value.nerdify(config.fixed) : value.toFixed(config.fixed).padStart(config.fill, '0')) + config.suffix);
+                const tmp = (config.nerd ? value.nerdify(config.fixed) : (isNaN(value) ? 0 : value).toFixed(config.fixed).padStart(config.fill, '0')) + config.suffix ;;
+                target.html(tmp.replace(/[a-z%]+$/gi, `<b style="padding-left:.25em;opacity:${config.suffixOpacity || .32}">$&</b>`));
                 return;
             }
 
-            target.text(config.nerd ? currentValue.nerdify(config.fixed) : currentValue.toFixed(config.fixed).padStart(config.fill, '0'));
+            target.text(config.nerd ? currentValue.nerdify(config.fixed) : (isNaN(currentValue) ? 0 : currentValue).toFixed(config.fixed).padStart(config.fill, '0'));
             requestAnimationFrame(() => fw.increment(target, value, config));
         } catch (e) {
             console.trace(e);
@@ -2279,7 +2297,10 @@ function multiselects() {
                         fill_label.fire()
                     })
                 )
-                , item.mime().emptyClasses().addClass(`bar content-left ellipsis no-scrolls m0 px`).css({ width: `calc(100% - ${h}px)` })
+                , (item => {
+                    item.emptyClasses().addClass(`bar content-left ellipsis no-scrolls m0 px`).css({ width: `calc(100% - ${h}px)` }).html(item.textContent.replace(/^#\d+\s+/, ''))
+                    return item
+                })(item.mime())
             ]).on(`click`, function() {
                 this.$(`[type=checkbox]`)[0].click()
             }).attr({ selected: item.getAttribute('selected') || null })

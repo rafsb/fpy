@@ -120,15 +120,38 @@ class CacheDB(ClassT):
             if callback:
                 callback(True, None)
 
-    # Other methods remain the same...
+
+class MemDB(ClassT):
+
+    _db = {}
+
+    def set(self, data, id=None, expires=CACHE_LIFESPAN):
+        if id:
+            self._db[str(id)] = {
+                "expires": datetime.now().timestamp() + expires * 60,
+                "data": data
+            }
+
+    def get(self, id=None):
+        if id is not None:
+            content = self._db.get(str(id), None)
+            if content and content.get('expires', -1) > datetime.now().timestamp():
+                return content.get('data', None)
+        return None
+
+    def destroy(self, id):
+        try: del self._db[id]
+        except: pass
+
+    def clear(self):
+        self._db = {}
 
 
-memcache = CacheDB(db_name="memdb")
-# cachedb = CacheDB(db_name="cachedb")
-# localdb = CacheDB(db_name='localdb')
+cache = CacheDB(db_name="cache")
+memcache = MemDB()
 
 
-def clear_cache(caches=None, pattern=None, id=None, engine=memcache):
+def clear_cache(caches=None, pattern=None, id=None, engine=cache):
     """
     Clears the cache by deleting cache files based on the specified criteria.
 
@@ -136,7 +159,7 @@ def clear_cache(caches=None, pattern=None, id=None, engine=memcache):
         caches (list, optional): A list of cache filenames to be cleared. Defaults to None.
         pattern (str, optional): A regular expression pattern to match cache filenames. Defaults to None.
         id (str, optional): An identifier for the cache. Defaults to None.
-        engine (object, optional): The cache engine to use. Defaults to memcache.
+        engine (object, optional): The cache engine to use. Defaults to cache.
 
     Returns:
         None
@@ -156,7 +179,7 @@ def clear_cache(caches=None, pattern=None, id=None, engine=memcache):
                 engine.destroy(filename)
 
 
-def CACHE(id=None, lifespan=CACHE_LIFESPAN, engine=memcache):
+def CACHE(id=None, lifespan=CACHE_LIFESPAN, engine=cache):
     def decorator(fn):
         def wrapper(*args, **kwargs):
             res = None

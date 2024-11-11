@@ -2,29 +2,35 @@
     <!-- HOME -->
     <div id="home" class='fixed wrap no-scrolls'>
         <header class="row left px2">
-            <span class="left only-pointer mh -logo"><img src="img/logo-dark.png" class="left mh"></span>
+            <span class="left only-pointer mh -logo"><img src="img/logo-light.png" class="left mh"></span>
             <span class="left px">OPS | One Page Stock</span>
             <div class="right">
                 <label class="left px mt" style="opacity: .64;">TEMA:</label>
                 <select class='left themes mh'></select>
-                <span class="left icon px mh" style="transform: scale(1.5);">help</span>
+                <span class="left icon px mh" style="opacity: .32; transform: scale(1.5);">help</span>
+                <span class="left icon px pointer mh -tooltip" tip="Forçar o recálculo<br>dos dados em tela" style="transform: scale(1.5);" onclick="
+                    fetch('clear_cache').then(_ => {
+                        fw.warning('The system will restart...')
+                        setTimeout(_ => location.reload(), AL * 4)
+                    })
+                    ">refresh</span>
             </div>
         </header>
         <div class="row px no-scrolls">
-            <nav class="row ph bg -tabs">
-                <div class="left pointer fg ft -tab" data-action="overview">Tabela</div>
-                <div class="left pointer fg ft -tab" data-action="mainchart">Página inicial</div>
-                <div class="left pointer fg ft avoid-pointer -tab" data-action="userview">Meu painel</div>
+            <nav class="row ph -tabs">
+                <div class="left pointer blur ft -tab" data-action="initpage">Página inicial</div>
+                <div class="left pointer blur ft -tab" data-action="overview">Overview</div>
+                <div class="left pointer blur ft -tab" data-action="partview">Partial View</div>
             </nav>
-            <main class="row no-scrolls px fg -stage"></main>
+            <main class="row no-scrolls px -stage blur"></main>
         </div>
     </div>
     <style>
         #home > header {
             overflow:visible;
             z-index:10;
-            background: {{background}};
-            color: {{font}};
+            /* background: {{background}}; */
+            color: {{white}};
         }
         #home > header > span.-logo > img {
             height:1.75em;
@@ -36,13 +42,16 @@
             border-radius: .5em .5em 0 0;
             margin: 0 .125em 0 .25em;
             padding: .5em 1em;
-            opacity: .32
+            opacity: .32;
+            background: {{foreground}}ee;
         }
         #home .-tab.selected {
             opacity: 1
         }
         #home main.-stage {
-            height: calc(100vh - 6em);border-radius:.5em
+            height: calc(100vh - 5.75em);
+            border-radius:.5em;
+            background-color: {{foreground}}ee;;
         }
     </style>
     <script>
@@ -88,8 +97,8 @@
             })
 
             fw.onSocketBroadcast.add(fw.notify)
+            tooltips()
             bootloader.ready("home")
-            
         })()
     </script>
 </template>

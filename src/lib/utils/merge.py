@@ -13,30 +13,28 @@ def merge(new_data_list, db_data_list, delete_if_not_exists=True) :
     deleted = 0
     kept    = 0
     newdatadict = {}
-    to_insert   = []
-    to_update   = []
+    to_insert = []
+    to_update = []
     to_delete = []
 
-    temp_class = new_data_list[0].__class__ if len(new_data_list) else ""
-    if not temp_class:
-        temp_class = db_data_list[0].__class__ if len(db_data_list) else ""
+    try: temp_class = db_data_list[0].__class__
+    except:
+        try: temp_class = new_data_list[0].__class__
+        except: temp_class = None
+
+    if not temp_class: return log.warn('Could nor determine class type for merge')
 
     temp_class_name = temp_class.__name__
 
-    i = 0
     length = len(new_data_list)
-    for d in new_data_list:
+    for i, d in enumerate(new_data_list, start=1):
         hash = d.row_key()
         newdatadict[hash] = d
-        i += 1
         gauge(i / length, '', f'[{temp_class_name.upper()}] {i}/{length} - generating new hashtable')
 
-    i = 0
-    length = len(db_data_list)
-
-    if len(db_data_list):
-        for d in db_data_list:
-
+    length = len(db_data_list) if db_data_list else 0
+    if length:
+        for i, d in enumerate(db_data_list, start=1):
             tmpkey = d.row_key()
             tempnewdata = newdatadict.get(tmpkey, None)
 
@@ -45,30 +43,21 @@ def merge(new_data_list, db_data_list, delete_if_not_exists=True) :
                     to_delete.append(d)
                     deleted += 1
             elif tempnewdata.row_hash() != d.row_hash():
-                tempnewdata.id = d.id
+                if getattr(d, 'id', None): tempnewdata.id = d.id
                 to_update.append(tempnewdata)
                 del newdatadict[tmpkey]
                 changed += 1
             else:
                 del newdatadict[tmpkey]
                 kept += 1
-            i += 1
-            gauge(i / length - .01, '', f'[{temp_class_name.upper()}] {i}/{length} - {kept}/{changed}/{deleted} - comparing old and new hashes')
-        gauge(1, '', f'[{temp_class_name.upper()}] {length}/{length} - to: keep {kept}/change {changed}/remove {deleted} - comparing old and new hashes - elapsed time: {int(time() - start_time)}s ')
+
+            gauge(i / length, '', f'[{temp_class_name.upper()}] {i}/{length} - k:{kept}/c:{changed}/d:{deleted} - comparing old and new hashes')
 
     try:
-        for _, d in newdatadict.items():
-            to_insert.append(d)
-
-        if len(to_delete):
-            temp_class().bulk_del(rows=to_delete)
-
-        if len(to_insert):
-            temp_class().bulk_insert(rows=to_insert)
-
-        if len(to_update):
-            temp_class().bulk_update(rows=to_update)
-
+        for d in list(newdatadict.values()): to_insert.append(d)
+        if to_delete: temp_class().bulk_del(rows=to_delete)
+        if to_insert: temp_class().bulk_insert(rows=to_insert)
+        if to_update: temp_class().bulk_update(rows=to_update)
     except:
         log.error(traceback.format_exc())
 

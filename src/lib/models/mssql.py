@@ -3,7 +3,7 @@ import re
 import pyodbc
 import traceback
 from utils.basic_traits import ClassT
-from utils.log import Logger
+from utils.log import log
 
 
 class MSSQL:
@@ -31,7 +31,7 @@ class MSSQL:
             connection = pyodbc.connect(self.conn_str, autocommit=True)
             return connection
         except:
-            Logger.error(f"Error connecting to the database: {self.conn_str}")
+            log.error(message=f"Error connecting to the database: {self.conn_str}")
             return None
 
     def execute_query(self, query):
@@ -41,7 +41,7 @@ class MSSQL:
             self.connection.commit()
             return ClassT(status=True, res=res)
         except:
-            Logger.error(f"Error executing query: {traceback.format_exc()}")
+            log.error(message=f"Error executing query: {traceback.format_exc()}")
             return ClassT(status=False, res=None)
 
     def fetch(self, query):
@@ -51,7 +51,7 @@ class MSSQL:
             res = cursor.fetchall()
             return ClassT(status=True if len(res) > 0 else False, res=res)
         except:
-            Logger.error(f"Error fetching records: {traceback.format_exc()}")
+            log.error(f"Error fetching records: {traceback.format_exc()}")
             return ClassT(status=False, res=None)
 
     def upsert(self, entity):
@@ -88,8 +88,8 @@ class MSSQL:
                 sql_commands = re.split(r'\s+GO\s+', file.read(), flags=re.MULTILINE)
                 for sql in sql_commands:
                     if sql.strip():
-                        Logger.info(f"Executing SQL command: {sql.strip()}")
+                        log.info(f"Executing SQL command: {sql.strip()}")
                         res.append(self.execute_query(sql.strip()))
         else:
-            Logger.error(f"Initialization file not found: {filepath}")
+            log.error(f"Initialization file not found: {filepath}")
         return res

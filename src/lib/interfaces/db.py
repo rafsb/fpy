@@ -1,11 +1,12 @@
 import os
 import re
 import traceback
-# from hashlib import md5  # , sha256
+from hashlib import md5, sha256
 from datetime import datetime, date
 from models.mssql import MSSQL
 from utils.log import log
 from utils.basic_traits import ClassT, ResponseT, StaticCast
+from utils.cache import memcache
 
 
 DB_OPERATION_PACE = 512
@@ -20,20 +21,27 @@ class db_t(ClassT) :
     _Columns = None
 
     def columns(self):
-        res = self._Columns  # schema_cache.get('columns')
+        res = self._Columns  # memcache.get('INFORMATION_SCHEMA.COLUMNS')
         if res is None or len(res) == 0:
             sql = 'SELECT TABLE_NAME,COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS'
-            res = self.connect()[0].execute(sql)
-            res = [ col[1] for col in res if col[0].lower() == self.__class__.__name__.lower() ]
-            self._Columns = res
+            try: 
+                res = self.connect()[0].execute(sql)
+                res = [ col[1] for col in res if col[0].lower() == self.__class__.__name__.lower() ]
+                # memcache.set(res, id='INFORMATION_SCHEMA.COLUMNS', expires=1)
+                self._Columns = res
+            except:
+                log.error(traceback.format_exc())
         return res
 
-    def build_query(self, columns=None, filters=None, strict=True, offset=0, limit=100):
+    def keys(self):
+        return self._kc
+
+    def build_query(self, columns=None, filters=None, strict=True, offset=0, limit=-1):
         table_name = self.__class__.__name__
         conditions = []
         params = []
 
-        if filters:
+        if filters and len(filters.keys()):
             try:
                 for column, value in filters.items():
                     if type(value) is list and len(value) == 1:
@@ -41,7 +49,7 @@ class db_t(ClassT) :
                     if isinstance(value, tuple):
                         p, q, o = value if len(value) == 3 else (*value, None)
                         if q:
-                            conditions.append(f"[{table_name}].[{column}] {o or 'BETWEEN'} ? AND ?")
+                            conditions.append(f"[s{table_name}].[{column}] {o or 'BETWEEN'} ? AND ?")
                             params.extend([p, q])
                         else:
                             conditions.append(f"[{table_name}].[{column}] {o or '='} ?")
@@ -87,7 +95,7 @@ class db_t(ClassT) :
     def execute(self, sql, vals_list=None):
         start_time = datetime.now()
         res = None
-        sql = re.sub(r'\s+', ' ', sql).strip()
+        # sql = re.sub(r'\s+', ' ', sql).strip()
         self.connect()
         column_names = []
         if self._Cursor:
@@ -114,30 +122,50 @@ class db_t(ClassT) :
         log.info(message="%s secs for %s" % ((datetime.now() - start_time), sql))
         return res
 
-    def fetch(self, columns=None, filters=None, strict=True, offset=None, limit=None):
+    def fetch(self, columns=None, filters=None, strict=True, offset=None, limit=-1):
+        """
+        Fetches data from the database based on the specified columns and filters.
+
+        Args:
+            columns (list, optional): List of column names to fetch. Defaults to None, which fetches all columns.
+            filters (dict, optional): Dictionary of filters to apply to the query. Defaults to None.
+                Filters with None values are removed.
+            strict (bool, optional): If True, applies strict filtering. Defaults to True.
+            offset (int, optional): Number of rows to skip before starting to return rows. Defaults to None.
+            limit (int, optional): Maximum number of rows to return. Defaults to None.
+
+        Returns:
+            list: Result set of the query execution.
+        """
         if filters:
             for k, v in filters.items():
                 if v is None: del filters[k]
         sql, params = self.build_query(columns=columns, filters=filters, strict=strict, offset=offset, limit=limit)
+        log.debug(sql + " < %s" % params)
         return self.execute(sql, params)
 
-    def row_key(self, char=';') :
+    def row_key(self, char=';', encrypt=False):
         _k = []
-        for k in self.key_columns(): _k.append("%s" % str(getattr(self, k, '')).strip())
-        return char.join(_k)
+        for k in self._kc: 
+            v = getattr(self, k, '')
+            if v in [None, 0, '', False]: v = ''
+            _k.append("%s" % str(v).strip())
+        tmp = char.join(_k)
+        return encrypt and md5(tmp.encode('utf-8')).hexdigest() or tmp
 
     def row_hash(self, blacklist=None) :
         attrs = self.attrs(bl=blacklist)
-        keys = sorted(attrs.keys())
+        keys = sorted(self.columns())
         temp_str = []
         for key in keys:
             if key != "id" :
-                val = attrs.get(key)
-                if isinstance(val, str): temp_str.append(StaticCast.str(val))
-                elif isinstance(val, float): temp_str.append("%d" % StaticCast.float(val))
-                elif isinstance(val, date): temp_str.append(val.strftime(StaticCast.SHORT_DATE))
-                elif isinstance(val, datetime): temp_str.append(val.strftime(StaticCast.LONG_DATE))
-                else: temp_str.append("%s" % str(val))
+                val = attrs.get(key, '')
+                if val in [None, 0, '', False]: val = ''
+                if isinstance(val, str): temp_str.append("%s:%s" % (key, StaticCast.str(val, clear=True)))
+                elif isinstance(val, int): temp_str.append("%s:%d" % (key, StaticCast.int(val)))
+                elif isinstance(val, float): temp_str.append("%s:%d" % (key, StaticCast.float(val)))
+                elif isinstance(val, date): temp_str.append("%s:%s" % (key, val.strftime(StaticCast.SHORT_DATE)))
+                elif isinstance(val, datetime): temp_str.append("%s:%s" % (key, val.strftime(StaticCast.LONG_DATE)))
         temp_str = re.sub(r"\s+", "", '|'.join(temp_str)).strip()
         # return md5((''.join(temp_str)).encode('utf-8')).hexdigest()
         # return sha256((''.join(temp_str)).encode("utf-8")).hexdigest()
@@ -190,7 +218,7 @@ class db_t(ClassT) :
                 (
                     str(getattr(x, column, ''))
                     + str((f' {args.get('sep', '|')} ' + getattr(x, args['add_field'], '')) if args.get('add_field', False) else '')
-                ) for x in self.fetch(columns=[column] + ([args['add_field']] if args.get('add_field', False) else []), limit=1000000).rows or []
+                ) for x in self.fetch(columns=[column] + ([args['add_field']] if args.get('add_field', False) else []), limit=-1).rows or []
             ])
         )
 

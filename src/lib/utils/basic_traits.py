@@ -152,9 +152,9 @@ class StaticCast:
     DATE_AS_ID = "%Y%m%d%H%M%S"
 
     @staticmethod
-    def str(s):
+    def str(s, clear=False):
         try:
-            return re.sub(r'["\']', '`', re.sub(r'\s+', ' ', str(s).strip())).strip()
+            return re.sub(r'\s+', ' ', re.sub(r'["\'`]', ' ', str(s))).strip()
         except Exception:
             return ''
 

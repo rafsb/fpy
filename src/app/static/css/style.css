@@ -1,19 +1,13 @@
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: .5em; }
-::-webkit-scrollbar-track { background: #4b4b4b }
-::-webkit-scrollbar-thumb { background: lightgray; border:none; width:.5em;}
+::-webkit-scrollbar-track { background: transparent }
+::-webkit-scrollbar-thumb { background: #8F44AD; width:.5em; height: .5em}
 
 table {
     border-collapse: collapse;
     min-width: 100%;
     /* table-layout: fixed; */
-}
-
-tr:hover {
-    background: lightgray;
-    color: black;
-}
-
+} 
 
 th {
 	resize: horizontal;
@@ -35,17 +29,34 @@ th {
 }
 
 .table-row:nth-child(even), td:nth-child(even), th:nth-child(even), .cell:nth-child(even) {
+    background: #00000016;
+}
+
+.table-row:nth-child(even), td:nth-child(even), th:nth-child(even), .cell:nth-child(even) {
     background: #00000008;
 }
 
-.table-row.show.checked {
-    background: darkgray;
+.table-row.checked:nth-child(even) {
+    background: papayawhip;
     font: black;
 }
 
-.table-row.show.checked input, .table-row.show.checked select {
-    background: lightgray;
+.table-row.checked:nth-child(odd) {
+    background: peachpuff;
+    font: black;
 }
+
+.table-row.checked input, .table-row.checked select {
+    background: beige;
+}
+
+tr:hover, .table-row:hover {
+    background: #2C97DD44;
+}
+
+tr:hover input, tr:hover select, .table-row:hover input, .table-row:hover select {
+    background: lightgray;
+}  
 
 
 @media only screen and (max-width: 1920px) {

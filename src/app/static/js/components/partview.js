@@ -1,7 +1,7 @@
 (async (fw, args) => {
 
     fw.components.tablejs({
-        endpoint: `inventory_aging`
+        endpoint: `inventory_partial_view`
         , filters: [
             { name: 'sku_code', type: 'multiselect' }
             , { name: 'sku_size', type: 'multiselect' }

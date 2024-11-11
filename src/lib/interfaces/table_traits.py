@@ -46,23 +46,24 @@ class table_t(db_t):
     # Default blacklisted columns
     _bl = []
 
-    def bulk_insert(self, items):
+    def bulk_insert(self, rows=[]):
         """
         Perform a bulk insert operation for multiple rows.
         """
         res = 0
-        classname = type(self).__name__.lower()
+        classtype = type(self)
+        classname = classtype.__name__.lower()
         columns = [x for x in self.columns() if x not in self.blacklisted()]
-        if len(columns) == 0: columns = items[0].keys()
-        rows = []
-        for item in items:
+        if len(columns) == 0: columns = rows[0].keys()
+        items = []
+        for item in rows:
             tmp = []
             for k in columns:
                 v = getattr(item, k, None)
                 if v is None:
                     v = getattr(item, k.upper(), None)
                 tmp.append(re.sub(r"\s+|'|\"", ' ', str(v).strip()) if v is not None else None)
-            rows.append(tmp)
+            items.append(tmp)
 
         sql_cols = '[' + ('],['.join(columns)) + ']'
 
@@ -70,23 +71,21 @@ class table_t(db_t):
 
         try:
             self.connect()
+            size = len(items)
             i = 1
-            size = len(rows)
             gauge(0, '', f'[{classname.upper()}] {i}/{size} - added')
-            while len(rows):
-                subset = rows[:DB_OPERATION_PACE]
+            while len(items):
+                subset = items[:DB_OPERATION_PACE]
                 try:
                     res = self._Cursor.execute(sql + "(" + ("),(".join(map(lambda p: ",".join(map(lambda q: f"'{str(q)}'" if q is not None else 'NULL', p)), subset))) + ")").rowcount
                 except:
-                    log.error(f"[{classname.upper()}] failed bulk_insert for {len(subset)} rows, trying one-by-one.")
+                    log.warn(f"[{classname.upper()}] failed bulk_insert for {len(subset)} rows, trying one-by-one.")
                     for set in subset:
-                        try:
-                            self._Cursor.execute(sql + "(" + (",".join(map(lambda q: f"'{str(q)}'" if q is not None else 'NULL', set))) + ")")
-                        except:
-                            log.error(sql + "(" + (",".join(map(lambda q: f"'{str(q)}'" if q is not None else 'NULL', set))) + ")")
-                            exit()
+                        tmp = sql + "(" + (",".join(map(lambda q: f"'{str(q)}'" if q is not None else 'NULL', set))) + ")"
+                        try: self._Cursor.execute(tmp)
+                        except: log.error(tmp + '\n' + traceback.format_exc())
                 gauge(i / size, '', f'[{classname.upper()}] {i}/{size} - added')
-                rows = rows[DB_OPERATION_PACE:]
+                items = items[DB_OPERATION_PACE:]
                 i += DB_OPERATION_PACE
             gauge(1, '', f'[{classname.upper()}] {size}/{size} - added')
         except:
@@ -95,7 +94,7 @@ class table_t(db_t):
         self.conn.close()
         return res
 
-    def bulk_update(self, rows):
+    def bulk_update(self, rows=[]):
         """
         Perform a bulk update operation for multiple rows.
         """
@@ -117,7 +116,7 @@ class table_t(db_t):
                     for k in item._kc:
                         sql += f"[{k}]="
                         v = getattr(item, k, None)
-                        if v is None: sql += " IS NULL"
+                        if v is None: sql = sql[:-1] + " IS NULL"
                         elif type(v) in [float, int]: sql += str(v)
                         else: sql += f"'{str(v)}'"
                         sql += " AND "
@@ -159,11 +158,12 @@ class table_t(db_t):
                     for k in item._kc:
                         sql += f"[{k}]="
                         v = getattr(item, k, None)
-                        if v is None: sql += " IS NULL"
+                        if v is None: sql = sql[:-1] + " IN (NULL, '')"
                         elif type(v) in [float, int]: sql += str(v)
                         else: sql += f"'{str(v)}'"
-                        sql += " OR "
-                    res += self._Cursor.execute(sql[:-4]).rowcount
+                        sql += " AND "
+                    try: res += self._Cursor.execute(sql[:-4]).rowcount
+                    except: log.error(sql[:-5])
                     gauge(i / size, '', f'[{classname.upper()}] {i}/{size} - deleted')
                     rows = rows[DB_OPERATION_PACE:]
                 i += DB_OPERATION_PACE
@@ -236,7 +236,7 @@ class table_t(db_t):
             rows_count = res.rowcount
             message = uquery
         except:
-            rows_count  = 0
+            rows_count = 0
 
         if rows_count == 0:
             try:

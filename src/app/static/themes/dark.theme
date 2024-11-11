@@ -1,0 +1,9 @@
+{
+    "HEADER"        : "#1140fe"
+    , "FOREGROUND"  : "#242424"
+    , "BACKGROUND"  : "#000000"
+    , "SPAN"        : "#2C97DD"
+    , "FONT"        : "#fefefe"
+    , "type"        : "dark"
+    , "theme_name"  : "ball-dark"
+}

@@ -17,14 +17,16 @@ def register(app, args=None):
         return 'ok'
 
     @app.get('/departments')
-    @CACHE(id='departments')
+    # @CACHE(id='departments')
     def _get_departments():
-        return [x.attrs() for x in departments().fetch().rows]
+        rows = departments().fetch().rows
+        return [x.attrs() for x in rows] if rows else []
 
     @app.get('/actions')
-    @CACHE(id='actions')
+    # @CACHE(id='actions')
     def _get_actions():
-        return [x.attrs() for x in actions().fetch().rows]
+        rows = actions().fetch().rows
+        return [x.attrs() for x in rows]
 
     @app.get('/env')
     def _get_env():

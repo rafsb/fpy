@@ -1,0 +1,9 @@
+{
+    "HEADER"        : "#1140fe"
+    , "BACKGROUND"  : "#babaca"
+    , "FOREGROUND"  : "#FFFFFF"
+    , "FONT"        : "#1a1a1a"
+    , "SPAN"        : "#2C97DD"
+    , "type"        : "light"
+    , "theme_name"  : "ball"
+}

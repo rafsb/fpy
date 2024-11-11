@@ -28,7 +28,7 @@
             ROW('flex').append([
                 DIV('col-1 content-right px2').html('Responsible')
                 , DIV('col-2 px').append(
-                    TAG('select', 'px').append([ ... ])
+                    TAG('select', 'px').append([ TAG('option').attr({ value: '' }).html('-') ])
                 )
             ])
         ])

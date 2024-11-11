@@ -11,7 +11,7 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
 
     const
     uri = config.endpoint || 'api'
-    , cols = await get(uri + '/cols' ) || []
+    , cols = config.cols || (await get(uri + '/cols' )) || []
     , calculated_fields = cols && config.calculated_fields?.length ? cols.filter(col => config.calculated_fields.includes(col)).reverse() : []
     , show_rows = new throttle(e => {
         const list = $(`.${classname} .table-row.show`);;
@@ -65,7 +65,7 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
     }
     ;;
 
-    stage.tablejs_copy = config.tablejs_copy || function(el, sep = '\t') {
+    stage.tablejs_copy = config.tablejs_copy || function(sep = '\t') {
         let
         res = $(`.${classname} .table-header .cell`).map(e => e.textContent.trim()).join(sep)
             + '\n'
@@ -147,7 +147,7 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
                                     height: '1.75em'
                                     , width: '3.25em'
                                     , borderRadius: '.25em'
-                                    , background: fw.palette.SPAN
+                                    , background: fw.palette.PETER_RIVER
                                     , color: fw.palette.WHITE
                                     , boxShadow: '0 0 .5em ' + fw.palette.DARK3
                                 }).append(
@@ -171,7 +171,7 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
                         TAG('thead', 'row').append(
                             TAG('tr', `row table-header sticky`, {
                                 top: 0
-                                , background: fw.palette.SPAN
+                                , background: fw.palette.PETER_RIVER
                                 , color: fw.palette.WHITE
                                 , boxShadow: '.5em 0 .5em black'
                                 , zIndex: 100
@@ -205,7 +205,7 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
                 /**
                  * FOOTER
                 */
-                , DIV(`row`, { background: fw.palette.SPAN, color: fw.palette.WHITE }).append(
+                , DIV(`row`, { background: fw.palette.PETER_RIVER, color: fw.palette.WHITE }).append(
                     TAG(`footer`, `row -counter px`, { boxShadow: '-1em 0 1em black', background: '#00000032' }).append([
                         SPAN('0', 'right px mr -enumerator')
                         , SPAN('Núm. Resgistros:', 'right px', { opacity: .64 })
@@ -265,7 +265,7 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
         fw.storage(classname, JSON.stringify(filters))
 
         return post(uri + '/rows', {
-            data: { filters, offset: config.append ? $(`.${classname} .table-row`).length : 0, strict: true }
+            data: { filters, offset: config.append ? $(`.${classname} .table-row`).length : 0, strict: true, limit: 200 }
             , callback: res => {
                 build_table(blend(config, { rows: res }))
                 show_rows.fire()
@@ -279,7 +279,7 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
                     x = $(`.${classname} .table-row.show`)?.reduce((acc, row) => acc + (row.item[cf] && !isNaN(row.item[cf]) ? row.item[cf] * 1 : 0), 0)
                     , e = $(`.${classname} .${cf}.calc`)[0]?.addClass('-tooltip').attr({ tip: x?.toFixed(1) || '0' })
                     ;;
-                    if (e !== undefined && x !== undefined) fw.increment(e, x * 1000, { nerd: true })
+                    if (e !== undefined && x !== undefined) fw.increment(e, x, { nerd: true })
                 })
                 tooltips()
                 show_rows.fire()
@@ -338,7 +338,7 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
             setTimeout(_ => {
                 config.append = false
                 search_ev(config)
-                pass()
+                pass(stage)
             }, AL)
         }, AL)
     })
