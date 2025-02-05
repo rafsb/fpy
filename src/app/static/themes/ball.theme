@@ -1,0 +1,12 @@
+{
+    "BACKGROUND"  : "#eaeaea"
+    , "FOREGROUND"  : "#FFFFFF"
+    , "FONT"        : "#1a1a1a"
+    , "SPAN"        : "#0000ff"
+    , "C1"          : "#000000"
+    , "C2"          : "#000000"
+    , "C3"          : "#000000"
+    , "C4"          : "#0000ff"
+    , "type"        : "light"
+    , "name"  : "ball"
+}

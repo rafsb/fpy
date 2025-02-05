@@ -1,44 +1,94 @@
 <template>
-    <div id="splash" class="fixed view zero blur" style="
-        z-index:10000;
-        background: {{header}}22;
-    ">
-        <div class="abs zbr">
-            <div class="rel -splash-stage"></div>
-        </div>
-    </div>
+    <div id="splash" class="fixed view zero blur" style="z-index:10000;background-color: {{background}}aa;"></div>
     <script>
-        get(`img/spin.svg`, res => {
+        const letters = [ 8, 10 ] ;;
+        get(`img/sctech.svg`, res => {
             res = res.morph()[0]
-            res.$(`path`).forEach((p, i) => p.css({ stroke: '{{header}}', fill: '{{header}}', "stroke-width": 1 }))
-            $(`#splash .-splash-stage`)[0].app(DIV(`-logo`, {
-                padding: '2em 4em'
-                , pointerEvents: `none`
-            }).app(res)).$('svg').css({
-                maxHeight: '4em'
-                , maxWidth: '4em'
+            res.$(`path`).forEach((p, i) => p.css({ 
+                stroke: i < letters[0] ? fw.palette.C1 : fw.palette.FONT
+                , fill: i < letters[0] ? fw.palette.C1 : fw.palette.FONT
+                , "stroke-width": 1
+            }))
+            $(`#splash`)[0].append(
+                DIV(`centered -logo content-center`).css({ pointerEvents: `none` }).append(
+                    res
+                ).append([
+                    ROW('flex').append([
+                        DIV('col-3')
+                        , DIV('wd-6', { background: fw.palette.FONT + '22', bobrderRadius: '.5em' }).append(
+                            DIV('left -progress').css({ background: fw.palette.C1, width: '0%', height: '.25em', borderRadius: '.25em' })	
+                        )
+                        , DIV('col-3')
+                    ])
+                    , ROW('flex').append([
+                        DIV('col-3')
+                        , DIV('wd-6').append(
+                            DIV('row content-right pv2 ellipsis -progress-label', { color: fw.palette.FONT }).html('Loading...')
+                        )
+                        , DIV('col-3')
+                    ])
+                ])
+            )
+            res.$(`rect`).forEach((p, i) => {
+                const len = p.getTotalLength() ;;
+                p.css({ 
+                    stroke: fw.palette.C1
+                    , fill: 'none'
+                    , "stroke-dasharray": `${len},${len}`
+                    , "stroke-offset": len * -1
+                    , "stroke-width": 1
+                })
             })
+            res.anime({ transform: 'scale(.75)' }, AL * 2)
         })
 
-        window.loading = {
+        setTimeout(_ => bootloader.ready('splash'), AL * letters.sum())
+
+        window.loading = fw.loading = {
             status: false
-            , on: _ => {
-                if(window.loading.status) return
+            , offset: 1
+            , fire: sw => {
+                const rect_load = _ => $(`#splash .-logo rect`).forEach((p, i) => {
+                    try {
+                        p.anime({ "stroke-dashoffset": (p?.getTotalLength()||0) * window.loading.offset, opacity: 1 }, 80 * letters.sum(), 40 * i)
+                    } catch(e) {
+                        p.anime({ "stroke-dashoffset": 0, opacity: 1 }, 80 * letters.sum(), 40 * i)
+                    }
+                }) ;;
+                window.loading.offset = (window.loading.offset + 1) % 2
+                if(window.loading.status) {
+                    clearInterval(window.loading.chron_off)
+                    window.loading.chron_off = null
+                    $('#splash').appear()
+                    rect_load()
+                    if(sw) $(`#splash .-logo path`).forEach((p, i) => p.anime({ opacity: 1 }, 200, 40 * i))
+                    else $(`#splash .-logo path`).forEach((p, i) => p.anime({ opacity: .08 }, 200, 40 * i))
+                    window.loading.chron_on = setTimeout(window.loading.fire, (letters.sum() * 2) * 40, !sw)
+                } else setTimeout(_ => {
+                    clearInterval(window.loading.chron_on)
+                    window.loading.chron_on = null
+                    $(`#splash .-logo path`).forEach((p, i) => p.anime({ opacity: .08 }, 200, 40 * i))
+                    $(`#splash .-logo rect`).forEach((p, i) => p.anime({ opacity: .08 }, 200, 40 * i))
+                    rect_load()
+                    window.loading.chron_off = setTimeout(_ => $('#splash').disappear(), letters.sum() * 40)
+                    window.loading.offset = 1
+                }, 40)
+            }
+            , on: (p=0, msg) => { 
+                $('#splash .-progress').anime({ width: Math.max(0, Math.min(100, p * 100)) + '%' })
+                if(msg) $('.-progress-label').html(msg)
+                if(window.loading.chron_on) return
                 window.loading.status = true
-                clearInterval(window.loading.schedule)
-                $('#splash').appear()
+                window.loading.fire(true)
             }
             , off: _ => {
-                if(!window.loading.status) return
+                $('#splash .-progress').anime({ width: '100%' })
+                if(window.loading.chron_off) return
                 window.loading.status = false
-                window.loading.schedule = setTimeout(_ => $('#splash').disappear(), AL)
+                window.loading.fire(true)
             }
         }
 
-        bootloader.onFinishLoading.add(window.loading.off)
-        setTimeout(_ => bootloader.ready('splash'), AL)
-
-        window.loading.on()
     </script>
 
 </template>

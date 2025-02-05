@@ -1,0 +1,104 @@
+<template>
+    <div id='fe' class="wrap flex no-scrolls">
+        <main class="col px bar scrolls stage">
+
+            <!-- LOGIN -->
+            <div class="ph4 row anchor content-left">
+                
+                <h1>Login</h1>
+
+                <p>In this section we will cover the basic usage of the current implemented login model based on python`s ldap3 library and Azure Active Directory.<br>Note that any user logged into Ball`s enviroment can use this login, the correct way of handling permissions is by managing groups using IT team or internal check systems.</p>
+                <div class="row px4">
+                    <div class="row flex">
+                        <div class="col-2 content-right px">
+                            <div class="px2 pointer check-user">
+                                Is UAT token valid? <span class="icon">passkey</span>
+                            </div>
+                        </div>
+                        <div class="col-10 code content-left px2 mv">click the button on the left to check users data...</div>
+                    </div>
+                </div>
+                <p>To use the login module on a proper way, we make use of a bunch of functionalities from the framework, such as fetching, parsing and morphing data, but we will address it on the framework session.</p>
+            
+            </div>
+
+            <div class="ph4 row anchor content-left">
+
+                <h1>TableJS</h1>
+
+                <p>TableJS is a simple and easy to use table generator that uses the framework to create and manage tables with a few lines of code and a simple and easy to use approach.</p>
+
+                <div class="row table-stage" style="height:40vh"></div>
+
+            </div>
+
+        </main>
+    </div>
+    <style>
+        .check-user {
+            background-color: {{span}};
+            color:white;
+            border-radius: .25em;
+        }
+    </style>
+    <script>
+
+        function userIsNotLogged(res) {
+            if(res.status) return userIsLogged(res)
+            const bt = $('#fe .check-user')[0] ;;
+            bt.anime({ background: '{{span}}'})
+            bt.$('.icon')[0].text('passkey')
+            $('#fe .code')[0].text('User not logged in, please login using the form.')
+            fw.exec('components/login').then(el => {
+                el.res.on('success', ev => {
+                    fw.success()
+                    get('user', res => res.status ? userIsLogged(res) : userIsNotLogged(res))
+                })
+                el.res.on('error', ev => {
+                    fw.error()
+                    userIsNotLogged(res)
+                })
+            })
+        }
+
+        function userIsLogged(res) {
+            if(!res.status) return userIsNotLogged(res)
+            const bt = $('#fe .check-user')[0] ;;
+            bt.anime({ background: '{{green_sea}}'})
+            bt.$('.icon')[0].text('check')
+            $('#fe .code')[0].empty().append([
+                DIV('row content-left', { color: '{{green_sea}}' }).text('status....: User logged')
+                , DIV('row content-left').text('user......: ' + res.data.cn)
+                , DIV('row content-left').text('email.....: ' + res.data.mail)
+                , ... Object.entries(res.data.memberOf).map(([global, groups]) => DIV('row content-left').html('groups....:<br>+'+global+'/'+groups.join('<br>+'+global+'/')))
+                , DIV('row content-left').append(
+                    DIV('pointer px', { color: '{{candy_red}}' }).text('>> logout <<').on('click', ev => {
+                        get('logout', res => {
+                            fw.success(res.messages)
+                            userIsNotLogged({ status: false })
+                        })
+                    })
+                )
+            ])
+            tooltips()
+        }
+
+        $('#fe .check-user').on('click', ev => {
+            get('user', res => res.status ? userIsLogged(res) : userIsNotLogged(res))
+        })
+
+        function as_float(value, key, item) {
+            return SPAN((value * 1).toFixed(2).replace(',', '').replace('.', ','), 'row content-right')
+        }
+
+        fw.components.tablejs({
+            endpoint: 'candata'
+            , filters: [
+                { name: 'can_code', type: 'multiselect' }
+            ]
+            , special_fields: {
+                vehicle_qty: as_float
+            }
+        }, $('#fe .table-stage')[0])
+    </script>
+</template>

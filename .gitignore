@@ -8,3 +8,5 @@ tmp/
 src/lib/utils/__pycache__/basic_traits.cpython-312.pyc
 site-packages/
 .env
+src/var/tmp/
+src/var/db/

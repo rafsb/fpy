@@ -1,9 +1,16 @@
+# --------------------------------------------------------------------------------------------
+# SQLite Database Model
+# --------------------------------------------------------------------------------------------
+# Author: Rafael Bertolini
+# --------------------------------------------------------------------------------------------
+
 import os
 import re
 import sqlite3
 import traceback
-from utils.basic_traits import class_t
+from utils.basic_traits import ClassT
 from utils.log import log
+
 
 class SQLiteDB:
     _Database = os.getenv("DB_DATABASE")
@@ -24,32 +31,32 @@ class SQLiteDB:
             log.error(f"Error connecting to the database: {e}")
             return None
 
-    def execute_query(self, query):
+    def query(self, query):
         try:
             cursor = self.connection.cursor()
             cursor.execute(query)
             self.connection.commit()
-            return class_t(status=True, res=cursor)
-        except Exception as e:
+            return ClassT(status=True, res=cursor)
+        except:
             log.error(f"Error executing query: {traceback.format_exc()}")
-            return class_t(status=False, res=None)
+            return ClassT(status=False, res=None)
 
     def fetch(self, query):
         try:
             cursor = self.connection.cursor()
             cursor.execute(query)
             res = cursor.fetchall()
-            return class_t(status=True if len(res) > 0 else False, res=res)
-        except Exception as e:
+            return ClassT(status=True if len(res) > 0 else False, res=res)
+        except:
             log.error(f"Error fetching records: {traceback.format_exc()}")
-            return class_t(status=False, res=None)
+            return ClassT(status=False, res=None)
 
     def upsert(self, entity):
-        res = self.execute_query(entity.update_query())
+        res = self.query(entity.update_query())
         if res.status:
             return res
         else:
-            return self.execute_query(entity.insert_query())
+            return self.query(entity.insert_query())
 
     def clear_database(self):
         try:
@@ -77,10 +84,10 @@ class SQLiteDB:
 
             cursor.execute("COMMIT;")
             cursor.execute("PRAGMA foreign_keys = ON;")
-            return class_t(status=True, res=None)
-        except Exception as e:
+            return ClassT(status=True, res=None)
+        except:
             log.error(f"Error clearing the database: {traceback.format_exc()}")
-            return class_t(status=False, res=None)
+            return ClassT(status=False, res=None)
 
     def init_database(self, filename='init_database.sql'):
         res = []
@@ -92,7 +99,7 @@ class SQLiteDB:
                 for sql in sql_commands:
                     if sql.strip():
                         log.info(f"Executing SQL command: {sql.strip()}")
-                        res.append(self.execute_query(sql.strip()))
+                        res.append(self.query(sql.strip()))
         else:
             log.error(f"Initialization file not found: {filepath}")
         return res

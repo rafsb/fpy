@@ -1,56 +1,66 @@
-(function(app, args){
+(function(fw, args){
+
+    const exists = $('div.fixed.login')[0] ;;
+    if(exists) exists.remove()
 
     const
-    d = DIV('fixed zero wrap bg').app(
-        TAG('form', 'col-2 centered fg', { padding:`1em`, borderRadius:`.5em`, boxShadow:`0 0 .5em {{dark3}}` }).attr({ action:'javascript:void(0)' }).app([
-            TAG('header', 'row', { marginBottom: `2em` }).app([
-                IMG('assets/img/logo.png', 'left', { height:'3em', width:'3em', borderRadius:'50%', boxShadow:'0 0 1em {{dark2}}' })
-                , SPAN('LOGIN', 'col-6 right content-right', { 
-                    color:'white'
-                    , borderRadius:'0 1.5em 1.5em 0'
-                    , padding:`1em 1.5em`
-                    , backgroundImage: 'linear-gradient(to left, {{belize_hole}}44, transparent)' 
+    d = DIV('fixed zero wrap blur login').append(
+        TAG('form', 'centered px2', { 
+            borderRadius:`.5em`
+            , boxShadow:`0 0 .5em {{dark3}}`
+            , background: fw.palette.BACKGROUND
+            , color: fw.palette.FONT
+        }).attr({ action:'javascript:void(0)' }).append([
+            TAG('header', 'row').append([
+                DIV().append(IMG(`img/logo-${fw.palette.type}.png`, 'left', { height:'2em' }))
+                , SPAN(translate('login'), 'right ph2', { color: '{{span}}', lineHeight: 2 })
+            ])
+            , DIV('row flex px mt2').append([
+                DIV('col-4 px').append(SPAN(translate('user'), 'right px'))
+                , TAG('input', 'col-8').attr({ name:'username', type:'user' })
+            ])
+            , DIV('row flex px mb2').append([
+                DIV('col-4 px').append(SPAN(translate('password'), 'right px'))
+                , TAG('input', 'row').attr({ name:'password', type:'password' }).on('keyup', ev => {
+                    if(ev.key == 'Enter') ev.target.upFind('form').$('.ready')[0].emit('click')
                 })
             ])
-            , DIV('row').app(
-                TAG('input', 'row').attr({ name:'user', type:'user', placeholder:'Usuário' })
-            )
-            , DIV('row', { margin: "1em 0"}).app(
-                TAG('input', 'row -hash').attr({ name:'pswd', type:'password', placeholder:'Senha' })
-            )
-            , DIV('row').app(
-                TAG('input', 'row only-pointer', {
-                    background:'{{belize_hole}}'
+            , DIV('row flex px2').append([
+                DIV('pointer pv2 ph4', {
+                    background: '{{pomegranate}}'
                     , color: 'white'
-                    , padding: '.75em'
-                    , borderRadius:`1.5em`
-                }).attr({ type:'submit', value:'PRONTO' }).on('click', function() {
-                    const data = this.upFind('form').json() ;;
-                    post('auth/sign', { 
+                    , borderRadius:`.5em`
+                }).text(translate('cancel')).on('click', ev => ev.target.upFind('login').remove())  
+                , DIV('col-1')
+                , DIV('pointer pv2 ph4 ready', {
+                    background:'{{green_sea}}'
+                    , color: 'white'
+                    , borderRadius:`.5em`
+                }).text(translate('ready')).on('click', ev => {
+                    loading.on()
+                    const data = ev.target.upFind('form').json() ;;
+                    post('login', { 
                         data
                         , callback: res => {
+                            loading.off()
                             if(res.status) {
-                                app.storage('uat', res.uat)
-                                app.success('Login realizado com sucesso! Reiniciando o sistema...')
-                                setTimeout(_ => location.reload(), AL*2)
+                                fw.uat = fw.storage('uat', res.uat)
+                                ev.target.upFind('login').remove()
+                                d.dispatchEvent(new Event('success'))
                             } else {
-                                app.storage('uat', "")
-                                app.error('Ops! Algo deu errado, tente novamente mais tarde...')
+                                fw.uat = fw.storage('uat', "")
+                                d.dispatchEvent(new Event('failure'))
                             }
                         } 
                     })
                 })
-            )
-            , DIV('row content-center').app(
-                SPAN('OU', null, { color:'{{SILVER}}44', padding:'1em' })
-            )
-            , DIV('row').app(
-                TAG('input', 'row', { background:'{{silver}}22', color:"{{silver}}" }).attr({ name:'token', type:'text', placeholder:'Chave' })
-            )
+            ])
         ])
     )
     ;;
 
-    $('#app')[0].empty().app(d)
+    $('#app')[0].append(d)
+
+    return d
 
 })

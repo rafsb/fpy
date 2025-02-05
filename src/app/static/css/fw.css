@@ -18,7 +18,6 @@ body {
 	position: relative;
 	text-align: left;
 	animation-fill-mode: both;
-	display: inline-block;
 	zoom: 1;
 	margin: 0;
 	top: 0;
@@ -127,7 +126,19 @@ item {
 	box-sizing: border-box;
 	-webkit-backface-visibility: hidden;
 	backface-visibility: hidden;
+}
+
+div, nav, span {
 	display: inline-block;
+}
+
+table {
+	font-size: 1em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	padding: .5em;
+	margin: 0;
 }
 
 .view {
@@ -206,7 +217,8 @@ item {
 }
 
 .wd-3,
-.w3 .wd-quart,
+.w3,
+.wd-quart,
 .wq {
 	width: calc(100% / 12 * 3);
 }
@@ -226,13 +238,13 @@ item {
 	width: calc(100% / 24 * 1);
 }
 
-.col,
 .col0,
 .c0 {
 	flex: 1 1 0;
 	flex-grow: .5 !important;
 }
 
+.col,
 .col-1,
 .col1,
 .c1 {
@@ -611,10 +623,21 @@ item {
 	margin-left: 2em
 }
 
-@media only screen and (max-width: 1920px) {
-	/* body { font-size: 12px;  } */
+.xround, .xr {
+	border-radius: .25em;
 }
 
+.xround2, .xr2 {
+	border-radius: .5em;
+}
+
+.xround3, .xr3 {
+	border-radius: 1em;
+}
+
+.xround4, .xr4 {
+	border-radius: 2em;
+}
 @media only screen and (max-width: 1366px) {
 
 	.wd-2third,
@@ -653,8 +676,6 @@ item {
 		padding: 10%;
 	}
 
-	.bar,
-	.ht-full,
 	.ht-full-min,
 	.ht-full-max,
 	.ht-2third,
@@ -774,7 +795,6 @@ modal,
 	height: 100%;
 	top: 0;
 	left: 0;
-	padding: 0;
 	overflow-y: auto;
 }
 
@@ -787,6 +807,7 @@ modal,
 .ht-full,
 .hf {
 	height: 100%;
+	overflow-y: auto;
 }
 
 .bg-wide {
@@ -799,11 +820,13 @@ modal,
 blur {
 	position: absolute;
 	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
 	transform-origin: center center;
 }
 
 .blur {
 	backdrop-filter: blur(12px) !important;
+	-webkit-backdrop-filter: blur(12px) !important;
 }
 
 /* BEHAVIORS */
@@ -848,7 +871,8 @@ blur {
 }
 
 .avoid-cursor {
-	pointer-events: none !important
+	pointer-events: none !important;
+	cursor: not-allowed;
 }
 
 .inverted {
@@ -932,24 +956,27 @@ blur {
 	min-width: .5em
 }
 
-[type='text'],
-[type='search'],
-[type='number'],
-[type='button'],
-[type='submit'],
+input,
 select,
+option,
 textarea,
-button {
+button { 	
+	font-size: 1em;
 	font-family: inherit;
 	color: inherit;
 	border: 1px solid lightgray;
-	border-radius: .5em;
-	padding: .5em 1em;
+	border-radius: .25em;
 	outline: none;
+	padding: .25em;
 }
 
-.input::placeholder {
-	opacity: .6;
+option {
+	border: none;
+	border-radius: 0;
+}
+
+select>option {
+	font-family: monospace;
 }
 
 .ellipsis {

@@ -1,27 +1,164 @@
 <template>
-    <!-- HOME -->
-    <main class="wrap">
-        <div class="wrap flex">
-            <nav class="col-3 pv4 pl4">
-                <div
-                    id="main-menu"
-                    class="wrap blur"
-                    style="border-radius: 1em 0 0 1em;background: {{font}}44;color:{{foreground}};border:1px solid {{foreground}}44"
-                ></div>
-            </nav>
-            <div class="col-9 pv4 pr4">
-                <div
-                    id="main-stage"
-                    class="wrap blur"
-                    style="border-radius: 0 1em 1em 0;background: {{foreground}}44"
-                ></div>
+    <div id="home" class="fixed wrap no-scrolls">
+        <header class="row flex px2">
+            <span class="only-pointer mh -logo">
+                <img src="img/logo.png" class="left mh">
+            </span>
+            <span class="px">App | Ball Corp.</span>
+            <span class="px -usdbrl" style="opacity: .64;"></span>
+            <div class="px col content-center ellipsis roboto-mono-light broadcast" style="opacity: .64"></div>
+            <div class="top-right-toolbar">
+                <label class="left px2 ucase -translate" style="opacity: .64;">theme</label>
+                <select class="left themes"></select>
             </div>
-        </div>
-    </main>
+        </header>
+        <div class="row px2 no-scrolls">
+            <nav class="rel row ph ucase -tabs">
 
+                <div class="left pointer blur ft -tab -translate" data-action="fe">FrontEnd</div>
+                <div class="left pointer blur ft -tab -translate" data-action="be">Backend</div>
+                
+                <div class="right -tooltip" tip="Help">
+                    <div class="ph2 pointer left" style="color:white;">
+                        <span class="icon help">help</span>
+                    </div>
+                </div>
+                <div class="right -tooltip" tip="Notifications">
+                    <div class="ph2 pointer left" style="color:white;">
+                        <span class="icon notifications-icon">notifications</span>
+                    </div>
+                </div>
+            </nav>
+            <main class="rel row no-scrolls px -stage blur"></main>
+        </div>
+    </div>
+    <style>
+        #home > header {
+            overflow: visible;
+            z-index: 10;
+            color: {{white}};
+        }
+        #home > header > span.-logo > img {
+            height: 1.75em;
+        }
+        #home > header select.themes {
+            border: 2px solid {{white}}44;
+            background: {{white}}12;
+            color: {{white}};
+            width: 16em;
+        }
+        #home .-tab {
+            border-radius: .5em .5em 0 0;
+            margin: 0 .125em 0 .25em;
+            padding: .5em 1em;
+            opacity: .32;
+            background: {{foreground}}ee;
+        }
+        #home .-tab.selected {
+            opacity: 1;
+        }
+        #home main.-stage {
+            height: calc(100vh - 6.375em);
+            border-radius: .5em;
+            background-color: {{foreground}}ee;
+        }
+
+        #home .top-right-toolbar {
+            display: flex;
+            align-items: center;
+        }
+    </style>
     <script>
-        fw.load("views/components/menu.htm", { target: $("#main-menu")[0] })
-        bootloader.ready('home')
-        setTimeout(_ => bootloader.ready('ready'), AL * 2)
+        (function () {
+
+            loading.on()
+
+            $(`#home > header > span.-logo`).on(`click`, _ => $('._lightbox,._window,._dialog').disappear(null, true));
+            
+            const tabs_stage = $(`#home .-tabs`).at();
+
+            tabs_stage.$(`.-tab`).on(`mouseenter`, e => {
+                tabs_stage.$(`.-tab`).not(e.target).anime({ opacity: .64 });
+                e.target.stop().anime({ opacity: 1 });
+            }).on(`click`, e => {
+                loading.on();
+                fw.storage('current_tab', e.target.index());
+                if (e.target.classList.contains(`avoid-pointer`)) return fw.warning('Under development...');
+                tabs_stage.$(`.-tab`).not(e.target).remClass(`selected`);
+                e.target.addClass(`selected`);
+                setTimeout(_ => fw.load(`views/components/${e.target.dataset.action}.htm`, { target: $('main.-stage').at().empty() }), AL);
+            })
+
+            tabs_stage.on(`mouseleave`, function () {
+                tabs_stage.$(`.-tab`).stop().anime({ opacity: .32 });
+                tabs_stage.$(`.-tab.selected`).stop().anime({ opacity: 1 });
+            })
+
+            const sel = $(`#home select.themes`)[0] ;;
+            get('themes', res => sel.append([
+                ...res.map(theme_name => TAG('option').css({ color: '{{font}}', background: '{{foreground}}' }).attr({ value: theme_name }).html(theme_name.toUpperCase()))
+                , TAG('option').css({ color: '{{font}}', background: '{{foreground}}' }).attr({ value: 'custom' }).html('CUSTOM')
+            ]) && ($(`#home select.themes`)[0].value = fw.theme))
+            sel.on('change', ev => {
+                const tmp_tn = fw.storage('theme');
+                if (ev.target.value == 'custom') fw.exec('components/theme_editor')
+                else if (tmp_tn != ev.target.value) {
+                    fw.storage('theme', ev.target.value);
+                    location.reload();
+                }
+            })
+
+            fw.app.on('notify', ev => $('.notifications-icon').at().css({ opacity: fw.notifications.length ? 1 : .32 })) 
+            $('.notifications-icon')[0].css({ opacity: .32 }).on('click', ev => fw.exec('components/notifications'))
+
+            $('span.help')[0].on('click', async _ => {
+                const data = (await get('views/components/help.htm')).prepare().morph() ;;
+                fw.app.append(
+                    DIV('help-stage fixed bar ztr w3 blur _blured', { boxShadow: '0 0 1em {{font}}44', background: '{{foreground}}aa' }).append(data)
+                )
+                data.evalute()
+            })
+
+            fw.onSocketBroadcast.add(ev => {
+                switch (ev.type) {
+                    case 'notify':
+                        fw.notify(ev.message)
+                        break
+                    case 'reload':
+                        fw.warning('The system will restart...')
+                        setTimeout(_ => location.reload(), AL * 4)
+                        break
+                    case 'loading':
+                        if (ev.message) loading.on(ev.percentage||100, ev.message)
+                        else loading.off()
+                        break
+                    default:
+                        const bc = $('.broadcast').at() ;;
+                        if(bc){
+                            if(bc.bc_timer) clearInterval(bc.bc_timer)
+                            bc.bc_timer = setTimeout(_ => bc.anime({ opacity: 0 }, AL * 4), 1000 * 10)
+                            bc.html(ev.message)
+                            bc.anime({ opacity: .64 }, AL)
+                        }
+                        break
+                }
+            })
+
+            function usdbrl(){
+                fetch('https://economia.awesomeapi.com.br/last/USD-BRL').then(r=>r.json()).then(res => {
+                    if(res && res.USDBRL && res.USDBRL.ask) {
+                        $(`#home .-usdbrl`)[0].html(`USD/BRL ($): ${res.USDBRL.ask}`)
+                        fw.components.usdbrl = res.USDBRL.ask * 1
+                    }
+                })
+            }
+            setInterval(usdbrl, 1000 * 60 * 5)
+            usdbrl()
+            
+            const tabs = tabs_stage.$(`.-tab`) ;;
+            (tabs[fw.storage('current_tab') || 0] || tabs.at()).click()
+            
+            bootloader.ready("home")
+        })()
     </script>
 </template>
