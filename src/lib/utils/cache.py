@@ -123,7 +123,7 @@ class CacheDB(ClassT):
         except:
             log.error(traceback.format_exc())
             if callback:
-                callback(True, None)
+                callback(traceback.format_exc(), None)
         return res
 
     def delete(self, id, callback=None):

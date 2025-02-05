@@ -1945,6 +1945,17 @@ class fw {
 
     static increment(target, start, end, direction, config = {}) {
         try {
+            config = {
+                direction: config.direction || (target.value < value),
+                pace: config.pace || (Math.abs(value - target.value) / 10),
+                fixed: config.fixed || 0,
+                fill: config.fill || 0,
+                count: config.count || 0,
+                nerd: config.nerd || false,
+                suffix: config.suffix || "",
+                suffixOpacity: config.suffixOpacity || .32,
+                parse: config.parse || false
+            };
 
             if(direction === undefined) direction = start < end ? 1 : -1
             

@@ -318,6 +318,7 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
             })
             mloader.ready(ms.uid())
         })
+    }
 
     }
     

@@ -42,6 +42,7 @@ for file in os.listdir(CONTROLLER_D):
             log.debug(traceback.format_exc())
 
 
+
 @app.get('/')
 def _1(): return send_from_directory(STATIC_D, 'index.html')
 
