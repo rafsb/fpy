@@ -24,7 +24,8 @@ def register(app, args=None):
 
     @app.route('/candata/cols', methods=['GET', 'POST'])
     def _candata_cols():
-        return candata().columns()
+        # Added a column called total to be calculated in the frontend
+        return candata().columns() + ['total']
 
     @app.post('/candata/rows')
     def _candata_rows():

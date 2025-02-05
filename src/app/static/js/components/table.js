@@ -239,7 +239,7 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
 
         if(!config.filters?.length) return fw.warning('No filters available')
 
-        loading.on()
+        loading.on()        
         
         const w = fw.window(
             TAG('form', classname + ' row -filters').attr({ action: 'javascript:void(0)' }).append([
@@ -318,7 +318,6 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
             })
             mloader.ready(ms.uid())
         })
-    }
 
     }
     

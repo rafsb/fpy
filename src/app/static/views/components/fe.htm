@@ -87,19 +87,36 @@
             get('user', res => res.status ? userIsLogged(res) : userIsNotLogged(res))
         })
 
-        function as_float(value, key, item) {
-            return SPAN((value * 1).toFixed(2).replace(',', '').replace('.', ','), 'row content-right')
+        // Showing different ways to use the tablejs component
+        // by customizing the fields and adding calculated fields
+
+        // Function to format float values
+        function as_float(value, key, item, round=2) {
+            return SPAN((value * 1).toFixed(round).replace(',', '').replace('.', ','), 'row content-right -tooltip').attr({
+                tip: `${key} - R$ ` + value.toFixed(round).replace('.', ',') 
+            })
         }
 
         fw.components.tablejs({
+            // the endpoint shall have: candata/cols, candata/rows
+            // and candata/count to work properly
             endpoint: 'candata'
+            // the table will be rendered in the element with the class table-stage
+            // and will contain filters as follows, the types are: 
+            // multiselect, select and date, empty types is free text search
             , filters: [
                 { name: 'can_code', type: 'multiselect' }
                 , { name: 'size', type: 'multiselect' }
             ]
+            // the table will have the following columns parsed by the functions
+            // on this section, the special_fields will be used to parse the data
             , special_fields: {
                 vehicle_qty: as_float
+                , pallet_qty: (v, k, i) => as_float(v, k, i, 3)
+                , total: (v, k, item) => as_float(item.car_pallets * item.pallet_qty, k, item, 2)
             }
+            // and the calculated_fields will be used to calculate the data
+            , calculated_fields: [ 'vehicle_qty' ]
         }, $('#fe .table-stage')[0])
     </script>
 </template>
