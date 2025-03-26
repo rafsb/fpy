@@ -1,11 +1,13 @@
 @echo off
-REM Remove __pycache__ directories
-for /d /r %%i in (__pycache__) do if exist "%%i" rd /s /q "%%i"
+if "%~1"=="" (
+    echo Remove __pycache__ directories
+    for /d /r %%i in (__pycache__) do if exist "%%i" rd /s /q "%%i"
 
-REM Check if the folder exists before removing files
-if exist .\src\var\db\.cache (
-    REM Remove all files in .\src\var\db\.cache
-    del /q .\src\var\db\.cache\*
+    REM Check if the folder exists before removing files
+    if exist .\src\var\db\.cache (
+        echo Remove all files in .\src\var\db\.cache
+        del /q .\src\var\db\.cache\*
+    )
 )
 
 REM run the python script

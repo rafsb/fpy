@@ -20,7 +20,9 @@ from utils.cache import CacheDB
 sessiondb = CacheDB('session')
 
 
-def auth(username, password, lifespan=60 * 24 * 365):
+def auth(username, password, lifespan=60 * 24):
+
+    username = username.upper()
 
     res = sessiondb.get(username)
     if res and isinstance(res, ClassT) and res.status and sha256(password.encode()).hexdigest() == res.password:
@@ -74,14 +76,14 @@ def auth(username, password, lifespan=60 * 24 * 365):
             res.user_data["memberOf"] = [re.split(r'=', x, maxsplit=1) for x in res.user_data["memberOf"]]
             tmp = {}
             for key, value in res.user_data["memberOf"]:
-                tmp.setdefault(key, set()).append(value)
+                tmp.setdefault(key, set()).add(value)
             res.user_data["memberOf"] = {key: list(map(lambda x: x.split(',')[0], list(value))) for key, value in tmp.items()}
             res.password = sha256(password.encode()).hexdigest()
             res.uat = StaticCast.encrypt(f"^{res.user_data['cn']}.{res.last_login}$")
-            res.messages.add("User information retrieved successfully.")
+            res.messages.append("User information retrieved successfully.")
             res.status = True
         else:
-            res.messages.add("User not found.")
+            res.messages.append("User not found.")
         conn.unbind()
     except Exception as e:
         log.error(f"Error during authentication: {e}")

@@ -12,6 +12,7 @@ class User(ClassT):
             log.error(msg)
             res.messages.append(msg)
             return res
+        username = username.upper()
         sess = sessiondb.get(username, cast=ClassT)
         if not sess:
             msg = f"Session for {username} not found."
@@ -37,6 +38,7 @@ class User(ClassT):
             res.messages.append(msg)
             return res
         bl = sessiondb.get('blacklist') or []
+        username = username.upper()
         if username in bl:
             msg = f"User {username} is blacklisted."
             log.error(msg)
@@ -58,7 +60,7 @@ class User(ClassT):
             msg = "Username not provided when trying to logout."
             log.error(msg)
             return res
-        res.status = bool(sessiondb.destroy(username))
+        res.status = bool(sessiondb.destroy(username.upper()))
         return res
 
     def info(username: str) -> dict:
@@ -68,7 +70,7 @@ class User(ClassT):
             log.error(msg)
             res.messages.append(msg)
         else:
-            try: res.data = sessiondb.get(username, cast=ClassT).user_data
+            try: res.data = sessiondb.get(username.upper(), cast=ClassT).user_data
             except: res.messages.append('User not found.')
             res.status = bool(res.data)
         return res

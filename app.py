@@ -1,7 +1,7 @@
 # --------------------------------------------------------------------------------------------
 # App
-# Author: Rafael Bertolini
 # --------------------------------------------------------------------------------------------
+
 import os
 import re
 import sys
@@ -40,8 +40,6 @@ for file in os.listdir(CONTROLLER_D):
         except:
             from utils.log import log
             log.debug(traceback.format_exc())
-
-
 
 @app.get('/')
 def _1(): return send_from_directory(STATIC_D, 'index.html')

@@ -44,7 +44,7 @@ class CacheDB(ClassT):
                 with self.lock:
                     file_path = os.path.join(self.db_path, id)
                     content = {
-                        "expires": datetime.now().timestamp() + expires * 60
+                        "expires": datetime.now().timestamp() + expires * 1000 * 60
                         , "data": data
                     }
                     try:
@@ -123,7 +123,7 @@ class CacheDB(ClassT):
         except:
             log.error(traceback.format_exc())
             if callback:
-                callback(traceback.format_exc(), None)
+                callback(True, None)
         return res
 
     def delete(self, id, callback=None):
@@ -157,14 +157,14 @@ class MemDB(ClassT):
 
     def set(self, data, id=None, expires=CACHE_LIFESPAN):
         if id:
-            self._db[str(id)] = {
-                "expires": datetime.now().timestamp() + expires * 60,
-                "data": data
+            self._db['%s' % id] = {
+                "expires": datetime.now().timestamp() + expires * 1000 * 60
+                , "data": data
             }
 
     def get(self, id=None):
         if id is not None:
-            content = self._db.get(str(id), None)
+            content = self._db.get('%s' % id, None)
             if content and content.get('expires', -1) > datetime.now().timestamp():
                 return content.get('data', None)
             else:

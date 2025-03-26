@@ -30,6 +30,9 @@ class Logger:
 
     def __init__(self, max_lines=1024):
 
+        self.VERBOSE = VERBOSE
+        self.LOG_LEVEL = LOG_LEVEL
+
         self.max_lines = max_lines
         self.log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'var', 'tmp', 'logs'))
         os.makedirs(self.log_dir, exist_ok=True)

@@ -36,7 +36,7 @@ def merge(new_data_list, db_data_list, delete_if_not_exists=True) :
             if not isinstance(d, tmp_class): d = tmp_class(**d)
         except: pass
         new_data[d.row_key()] = d
-        gauge(i / length, '', f'[{tmp_class_name.upper()}] {i}/{length} - generating new hashtable')
+        gauge(i / length, suffix=f'[{tmp_class_name.upper()}] {i}/{length} - generating new hashtable')
 
     length = len(db_data_list) if db_data_list else 0
     if length:
@@ -56,12 +56,13 @@ def merge(new_data_list, db_data_list, delete_if_not_exists=True) :
                 if getattr(d, 'id', None):
                     tmp_row.id = d.id
                 to_update.append(tmp_row)
+                changed += 1
                 del new_data[row_key]
             else:
                 del new_data[row_key]
                 kept += 1
 
-            gauge(i / length, '', f'[{tmp_class_name.upper()}] {i}/{length} - k:{kept}/c:{changed}/d:{deleted} - comparing new and old hashes')
+            gauge(i / length, suffix=f'[{tmp_class_name.upper()}] {i}/{length} - k:{kept}/c:{changed}/d:{deleted} - comparing new and old hashes')
 
     try:
         for d in list(new_data.values()): to_insert.append(d)

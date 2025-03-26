@@ -1,0 +1,12 @@
+{
+    "BACKGROUND"  : "#babaca"
+    , "FOREGROUND"  : "#FFFFFF"
+    , "FONT"        : "#1a1a1a"
+    , "SPAN"        : "#0000FF"
+    , "C1"          : "#0000FF"
+    , "C2"          : "#169F85"
+    , "C3"          : "#7E8C8D"
+    , "C4"          : "#C0382B"
+    , "type"        : "light"
+    , "name"  : "standard"
+}

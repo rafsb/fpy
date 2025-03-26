@@ -74,7 +74,7 @@ class TableT(DB_T):
             self.connect()
             size = len(items)
             i = 1
-            gauge(0, '', f'[{classname.upper()}] {i}/{size} - added')
+            gauge(0, suffix=f'[{classname.upper()}] {i}/{size} - added')
             while len(items):
                 subset = items[:DB_OPERATION_PACE]
                 try:
@@ -85,10 +85,10 @@ class TableT(DB_T):
                         tmp = sql + "(" + (",".join(map(lambda q: f"'{str(q)}'" if q is not None else 'NULL', set))) + ")"
                         try: self._Cursor.execute(tmp)
                         except: log.error(tmp + '\n' + traceback.format_exc())
-                gauge(i / size, '', f'[{classname.upper()}] {i}/{size} - added')
+                gauge(i / size, suffix=f'[{classname.upper()}] {i}/{size} - added')
                 items = items[DB_OPERATION_PACE:]
                 i += DB_OPERATION_PACE
-            gauge(1, '', f'[{classname.upper()}] {size}/{size} - added')
+            gauge(1, suffix=f'[{classname.upper()}] {size}/{size} - added')
         except:
             log.error(traceback.format_exc())
 
@@ -105,21 +105,21 @@ class TableT(DB_T):
             self.connect()
             i = 0
             size = len(rows)
-            gauge(0, '', f'[{classname.upper()}] {i}/{size} - updated')
+            gauge(0, suffix=f'[{classname.upper()}] {i}/{size} - updated')
             while len(rows):
                 sqls = []
                 subset = rows[:DB_OPERATION_PACE]
                 for item in subset:
                     sql = f"UPDATE [{self._Database}].[{self._Schema}].[{classname}] SET "
                     for k in list(vars(item)):
-                        if k not in ['id'] + self.blacklisted(): sql += "[%s]='%s'," % (k, re.sub(r"['`]+", " ", str(getattr(item, k))))
+                        if k not in ['id'] + self.blacklisted(): sql += f"[{k}]='{re.sub(r"['`]+", " ", str(getattr(item, k)))}',"
                     sql = f"{sql[:-1]} WHERE "
                     for k in item._kc:
                         sql += f"[{k}]="
                         v = getattr(item, k, None)
                         if v is None: sql = sql[:-1] + " IS NULL"
                         elif type(v) in [float, int]: sql += str(v)
-                        else: sql += "'%s'" % re.sub(r"['`]+", " ", str(v))
+                        else: sql += f"'{re.sub(r"['`]+", " ", str(v))}'"
                         sql += " AND "
                     sqls.append(sql[:-5])
 
@@ -135,10 +135,10 @@ class TableT(DB_T):
 
                 res += tmp_count
 
-                gauge(i / size, '', f'[{classname.upper()}] {i}/{size} - updated')
+                gauge(i / size, suffix=f'[{classname.upper()}] {i}/{size} - updated')
                 rows = rows[DB_OPERATION_PACE:]
                 i += DB_OPERATION_PACE
-            gauge(1, '', f'[{classname.upper()}] {size}/{size} - updated')
+            gauge(1, suffix=f'[{classname.upper()}] {size}/{size} - updated')
         except:
             log.error(traceback.format_exc())
 
@@ -155,7 +155,7 @@ class TableT(DB_T):
         res = 0
         i = 0
         size = len(rows)
-        gauge(0, '', f'[{classname.upper()}] {i}/{size} - deleted')
+        gauge(0, suffix=f'[{classname.upper()}] {i}/{size} - deleted')
         try:
             self.connect()
             while len(rows):
@@ -170,10 +170,10 @@ class TableT(DB_T):
                         sql += " AND "
                     try: res += self._Cursor.execute(sql[:-4]).rowcount
                     except: log.error(sql[:-5])
-                    gauge(i / size, '', f'[{classname.upper()}] {i}/{size} - deleted')
+                    gauge(i / size, suffix=f'[{classname.upper()}] {i}/{size} - deleted')
                     rows = rows[DB_OPERATION_PACE:]
                 i += DB_OPERATION_PACE
-            gauge(1, '', f'[{classname.upper()}] {size}/{size} - deleted')
+            gauge(1, suffix=f'[{classname.upper()}] {size}/{size} - deleted')
         except:
             log.error(traceback.format_exc())
         self._Conn.commit()
@@ -359,3 +359,17 @@ class TableT(DB_T):
         Fetch all records from the table.
         """
         return self.fetch().rows
+
+    def replace(self, **args):
+        """
+        Replace the current object with the provided values.
+        """
+        for k, v in args.items():
+            setattr(self, k, v)
+        return self
+
+
+class TableT(TableT): pass
+
+
+class ViewT(ViewT): pass

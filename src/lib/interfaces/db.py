@@ -67,13 +67,13 @@ class DB_T(ClassT) :
         server = getattr(self, '_Server', os.environ.get('DB_SERVER'))
         table = getattr(self, '_Table', self.__class__.__name__)
         cache_id = f'INFORMATION_SCHEMA.COLUMNS-{server}-{table}'.upper()
-        res = memcache.get(cache_id)
+        res = memcache.get(id=cache_id)
         if res is None or len(res) == 0:
             sql = 'SELECT TABLE_NAME,COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS'
             try:
                 res = self.connect()[0].execute(sql)
                 res = [ col[1] for col in res if col[0].lower() == table.lower() ]
-                memcache.set(cache_id, res)
+                memcache.set(res, id=cache_id)
             except:
                 log.error(traceback.format_exc())
                 res = []

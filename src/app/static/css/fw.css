@@ -1,6 +1,6 @@
 @media only screen and (max-width: 1920px) {
 	html {
-		font-size: 14px
+		font-size: 12px
 	}
 }
 
@@ -352,6 +352,8 @@ h1, h2, h3, h4, h5, h6 {
 	height: 66.66%;
 }
 
+.hbar,
+.half-bar,
 .ht-half,
 .hh {
 	height: 50%;
@@ -675,7 +677,6 @@ h1, h2, h3, h4, h5, h6 {
 		max-width: 80%;
 		padding: 10%;
 	}
-
 	.ht-full-min,
 	.ht-full-max,
 	.ht-2third,

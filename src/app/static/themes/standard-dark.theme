@@ -1,0 +1,12 @@
+{
+    "FOREGROUND"  : "#242424"
+    , "BACKGROUND"  : "#000000"
+    , "FONT"        : "#fefefe"
+    , "SPAN"        : "#0000FF"
+    , "C1"          : "#0000FF"
+    , "C2"          : "#169F85"
+    , "C3"          : "#7E8C8D"
+    , "C4"          : "#C0382B"
+    , "type"        : "dark"
+    , "name"  : "standard-dark"
+}

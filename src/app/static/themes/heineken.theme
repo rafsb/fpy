@@ -1,0 +1,12 @@
+{
+    "BACKGROUND"  : "#eaeaea"
+    , "FOREGROUND"  : "#FFFFFF"
+    , "FONT"        : "#1a1a1a"
+    , "SPAN"        : "#13670b"
+    , "C1"          : "#13670b"
+    , "C2"          : "#13670b"
+    , "C3"          : "#bbbcbd"
+    , "C4"          : "#ff2b00"
+    , "type"        : "light"
+    , "theme_name"  : "heineken"
+}

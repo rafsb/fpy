@@ -39,7 +39,7 @@
                 }).text(translate('ready')).on('click', ev => {
                     loading.on()
                     const data = ev.target.upFind('form').json() ;;
-                    post('login', { 
+                    post('auth/in', { 
                         data
                         , callback: res => {
                             loading.off()

@@ -1,7 +1,15 @@
 from flask import request
 from entities.users import User as entity
-from utils.basic_traits import StaticCast, APIResponseT
+from utils.basic_traits import StaticCast, APIResponseT, ClassT
 from utils.log import log
+
+AD_PREFIX = 'NADC1_MGT_'
+# Allowed users for each group
+allowed_users = {
+    f"{AD_PREFIX}ADM": [ "RBERTOLI" ]
+    , f"{AD_PREFIX}FIN": [ ]
+    , f"{AD_PREFIX}OPR": [ ]
+}
 
 
 class user():
@@ -21,7 +29,7 @@ class user():
             log.error(msg)
             res.messages.append(msg)
             return res
-        res.status = bool(user)
+        res.status = True
         res.data = user
         return res
 
@@ -55,39 +63,58 @@ class user():
 
 
 def check_user(memberof=None):
+    if memberof and not isinstance(memberof, list):
+        memberof = [memberof]
+
     def decorator(fn):
         def wrapper(*args, **kwargs):
             uat = request.headers.get('Fw-Uat')
             res = user.logged(uat)
             if not res.status:
                 return res.attrs()
+
             if memberof:
-                if not any(True for x in (memberof if isinstance(memberof, list) else [memberof]) if x in res.data['memberOf']['CN']):
-                    msg = 'User is not authorized to access this resource'
+
+                # Extract user info
+                user_cn = res.data.get('cn', '').upper()
+                member_of_groups = [x.upper() for x in ClassT.nested(res.data, ['memberOf', 'CN' ], [])]
+                # Gather allowed users from all groups
+                allowed_people = sum([allowed_users.get(AD_PREFIX + group.upper(), []) for group in memberof], []) + allowed_users.get(f'{AD_PREFIX}OPS-ADM', [])
+                allowed_people = [x.upper() for x in allowed_people]
+
+                # Check if user is in allowed groups or explicitly listed
+                if not (
+                    bool(user_cn.upper() in allowed_people) or any(AD_PREFIX + group.upper() in member_of_groups for group in memberof)
+                ):
+                    msg = 'User is not authorized to access this resource (%s)' % user_cn
                     log.error(msg)
-                    return APIResponseT(status=False, messages=[msg] + res.messages).attrs()
+                    return APIResponseT(status=False, messages=list(set([msg] + res.messages))).attrs()
+
             return fn(*args, **kwargs)
+
         wrapper.__name__ = f'wrapper_{fn.__name__}'
         return wrapper
+
     return decorator
 
 
 def register(app, args=None):
 
-    @app.post('/login')
+    @app.post('/auth/in')
     def _auth_sign():
         data = request.json
         res = user.login(data.get('username'), data.get('password'))
         return res.attrs()
 
-    @app.route('/logout', methods=['POST', 'GET'])
+    @app.route('/auth/out', methods=['POST', 'GET'])
     def _auth_logout():
         uat = request.headers.get('Fw-Uat')
         res = user.logout(uat)
         return res.attrs()
 
-    @app.route('/user', methods=['POST', 'GET'])
+    @app.route('/user/info', methods=['POST', 'GET'])
     def _auth_info():
         uat = request.headers.get('Fw-Uat')
         res = user.info(uat)
-        return res.attrs()
+        print(res)
+        return res.make_response()

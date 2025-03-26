@@ -1946,19 +1946,22 @@ class fw {
     static increment(target, start, end, direction, config = {}) {
         try {
 
+            start = start || 0
+            end = end || 0
+
             if(direction === undefined) direction = start < end ? 1 : -1
             
-            config = {
-                fixed          : config.fixed          || 0
-                , fill          : config.fill           || 0
-                , count         : config.count          || 0
-                , nerd          : config.nerd           || false
-                , parse         : config.parse          || false
-                , suffix        : config.suffix         || ""
-                , suffixOpacity : config.suffixOpacity  || .32
-                , steps         : config.steps          || 10
-                , pace          : Math.abs(start - end) / (config.steps || 10)
-            }
+            config = blend({
+                fixed          : 0
+                , fill         : 0
+                , count        : 0
+                , nerd         : false
+                , parse        : false
+                , suffix       : ""
+                , suffixOpacity: .32
+                , steps        : 10
+                , pace         : Math.abs(start - end) / (config.steps || 10)
+            }, config || {})
 
             start += config.pace * direction
 
@@ -1975,8 +1978,8 @@ class fw {
                 : start.toLocaleString('pt-BR', { minimumFractionDigits: config.fixed||0, maximumFractionDigits: config.fixed||0 }).padStart(config.fill, '0')
             ) + config.suffix ;;
             target.html(tmp.replace(/[a-z%]+$/gi, `<b style="padding-left:.25em;opacity:${config.suffixOpacity || .32}">$&</b>`))
-            
-            requestAnimationFrame(() => fw.increment(target, start, end, direction, config))
+
+            if (start && end && start != end) requestAnimationFrame(() => fw.increment(target, start, end, direction, config))
         } catch (e) {
             console.trace(e)
         }

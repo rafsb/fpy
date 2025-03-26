@@ -1,0 +1,12 @@
+{
+    "BACKGROUND"  : "#eaeaea"
+    , "FOREGROUND"  : "#FFFFFF"
+    , "FONT"        : "#1a1a1a"
+    , "SPAN"        : "#f49e09"
+    , "C1"          : "#724b13"
+    , "C2"          : "#f49e09"
+    , "C3"          : "#f9c109"
+    , "C4"          : "#d22306"
+    , "type"        : "light"
+    , "theme_name"  : "beer"
+}

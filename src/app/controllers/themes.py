@@ -72,12 +72,11 @@ def register(app, args=None):
 
         res.status = True
         res.data = cached
-        res.messages.add("Theme saved")
+        res.messages.append("Theme saved")
 
         print(res)
 
         return res.response(code=200)
-
 
     @app.route('/themes', methods=['GET', 'POST'])
     def _themes() :

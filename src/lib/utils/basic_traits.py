@@ -168,15 +168,12 @@ class DBResponseT(ClassT):
 
 
 class APIResponseT(ClassT):
-    status: bool = False
-    messages: list = []
-    data: any = None
 
     def make_response(self, code=200, message=None):
         if message:
             self.messages.append(message)
         self.messages = list(set(self.messages))
-        return self.attrs(), code
+        return self.attrs(), code if self.status else 402
 
     def response(self, code=200, message=None):
         return self.make_response(code, message)
@@ -187,7 +184,13 @@ class APIResponseT(ClassT):
         self.status = status
         if message: self.messages.append(message)
         if data: self.data = data
-        return self.make_response()
+        return self.make_response(code=code)
+
+    def __init__(self, **args):
+        super().__init__(**args)
+        if not args.get('data'): self.data = None
+        if not args.get('status'): self.status = False
+        if not args.get('messages'): self.messages = []
 
 
 class StaticCast:
@@ -306,5 +309,11 @@ class StaticCast:
                 return decrypted
         except Exception:
             from utils.log import log
-            log.warn(f"invalide decrypt: {obj}")
+            log.error(traceback.format_exc())
             return None
+
+
+class Stats:
+
+    def interpolate(self, x, y, x1, y1, x2, y2):
+        return y1 + (x - x1) * (y2 - y1) / (x2 - x1)

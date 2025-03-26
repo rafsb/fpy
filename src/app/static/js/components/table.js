@@ -9,18 +9,25 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
     try { loaded_filters = fw.storage(classname)?.json() || [] }
     catch (e) { loaded_filters = {} }
 
+    fw.cache.filters = loaded_filters
+
     if(!config.sorting) config.sorting = {} ;;
 
     const
     uri = config.endpoint || 'api'
     , cols = config.cols || (await get(uri + '/cols' )) || []
-    , max_counter = config.max_counter || 0
-    , calculated_fields = cols && config.calculated_fields?.length ? cols.filter(col => config.calculated_fields.includes(col)).reverse() : []
+    ;;
+
+    if (!cols || !cols.length) return fw.error('No columns found! Please check the endpoint: ' + uri + '.') ;;
+
+    const
+    max_counter = config.max_counter || 0
+    , calculated_fields = config.calculated_fields || [] // cols && config.calculated_fields?.length ? cols.filter(col => config.calculated_fields.includes(col)).reverse() : []
     , show_rows = new throttle(e => {
         const list = $(`.${classname} .table-row.show`) ;;
         list.forEach(tr => tr.firstChild.style.display = tr.inPage(400) ? 'table-row' : 'none')
         if(e && (e.scrollTop + e.clientHeight) / e.scrollHeight > .8) search_ev(blend(config, { append: true }))
-        else loading.off()
+        // else loading.off()
     }, 128)
     , order_rows = field => {
         const
@@ -38,11 +45,19 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
     }
     , filter_elements = config => {
         const loaded_filters = JSON.parse(fw.storage(classname)) || {} ;;
+        fw.cache.filters = loaded_filters
         var tag ;;
         if (config) {
             switch (config.type) {
                 case ('multiselect'): {
                     tag = TAG('fmultiselect').attr({
+                        name: config.name
+                        , placeholder: translate(config.label || config.name).replace('<br>', ' ')
+                        , value: [loaded_filters[config.name]].flat().join(',')
+                    });;
+                } break
+                case ('select'): {
+                    tag = TAG('select').attr({
                         name: config.name
                         , placeholder: translate(config.label || config.name).replace('<br>', ' ')
                         , value: [loaded_filters[config.name]].flat().join(',')
@@ -82,7 +97,7 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
             }
         }
         return DIV(classname + ' px2 filter-element col', { height: '3.5em' }).append([
-            TAG('label', 'left content-left ellipsis px2', { fontSize: '.75em', opacity: .64 }).html(
+            TAG('label', 'row left content-left ellipsis px', { fontSize: '.75em', opacity: .64 }).html(
                 config ? translate(config.label || config.name).replace('<br>', ' ') : ''
             )
             , ROW('rel').css({ height: '2.5em'}).append(tag)
@@ -90,36 +105,44 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
     }
     ;;
 
+    fw.cache.cols = cols
+    fw.cache.filters = loaded_filters
+
     stage.append(
-        TAG('main', "wrap no-scrolls tablejs px " + classname).append(
+        TAG('main', "wrap no-scrolls tablejs " + classname).append(
             WRAP(null, 'no-scrolls').css({ borderRadius: '.5em', border: `1px solid ${fw.palette.FONT}44` }).append([
 
                 /**
                  * HEADER
                 */
-                DIV(`row`, { background: fw.palette.BACKGROUND, zIndex: 1000 }).append(
+                DIV(`rel row`, { background: fw.palette.BACKGROUND, zIndex: 1000 }).append(
                     DIV('tablejs-header row px').append([
                         DIV(`row flex`).append([
-                            DIV('col-1').append([
-                                SPAN(translate('Active filters:'), 'px3 left', { opacity: .64 })
-                                , DIV('active-filters px2 left ellipsis', { maxWidth: 'calc(100% - 10em)' }).append(
-                                    filter_pill(loaded_filters)
-                                )
+                            SPAN(translate('Active filters:'), 'px3', { opacity: .64 })
+                            , DIV('rel col').append([
+                                DIV('active-filters px2 row ellipsis no-scrolls content-left', { height: '3em' }).append(filter_pill(loaded_filters))
+                                , DIV('abs zero row -filter-stage hide', {
+                                    marginTop: '2.5em'
+                                    , background: fw.palette.BACKGROUND
+                                    , borderRadius: '0 0 .5em .5em'
+                                    , boxShadow: '0 1em 1em ' + fw.palette.FONT + '44'
+                                })
                             ])
+                            , SPAN("filter_list", "pointer icon px2 -tooltip").attr({
+                                tip: translate("Open filters")
+                            }).on('click', load_filter_panel)
                             , SPAN("refresh", "pointer icon px2 -tooltip").attr({
                                 tip: "Refresh"
                             }).on('click', ev => {
                                 load_more = true
                                 search_ev(blend(config, { append:false }))
                             })
-                            , SPAN("filter_list", "pointer icon px2 -tooltip").attr({
-                                tip: translate("Open filters")
-                            }).on('click', load_filter_panel)
                             , SPAN("backspace", "pointer icon px2 erase-filters -tooltip").attr({
                                 tip: "Erase filters"
                             }).on('click', ev => {
                                 $(`.${classname} .pill`).map(fe => fe.remove())
                                 fw.storage(classname, JSON.stringify({}))
+                                fw.cache.filters = {}
                                 load_more = true
                                 search_ev(blend(config, { append:false }))
                             })
@@ -132,20 +155,19 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
                 */
                 , DIV(`rel row table-body`, {
                     height: `calc(100% - 6em)`
-                    , overflowY: 'auto'
-                    , overflowX: 'auto'
+                    , overflow: 'auto'
+                    , zIndex: 100
                 }).on('scroll', e => show_rows.fire(e.target)).append(
                     TAG('table', 'row').append(
                         TAG('thead', 'row ucase sticky', { top: 0, zIndex: 100 }).append(
-                            TAG('tr', `table-header`, {
+                            TAG('tr', `row table-header pv2`, {
                                 background: fw.palette.BACKGROUND
                                 , color: fw.palette.FONT
+                                , minHeight: '2.    5em'
                             }).append([
-                                config.allow_handlers ? TAG('th', 'rel', { width: '2em' }).append(
+                                config.allow_handlers ? TAG('th', 'rel', { width: '2.5em' }).append(
                                     DIV('centered').append(
-                                        TAG('input', 'pointer', {
-                                            transform: 'scale(1.25)'
-                                        }).attr({
+                                        TAG('input', 'pointer').attr({
                                             type: 'checkbox'
                                         }).on('click', ev => $(`.${classname} .table-row.show input[type=checkbox]`).forEach(i => {
                                             i.checked = ev.target.checked
@@ -155,11 +177,11 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
                                 ) : null
                                 , ...cols.map(h => TAG(
                                     'th'
-                                    , `ellipsis content-center bold ucase pointer pv2 ${h}_header`
+                                    , `ellipsis content-center bold ucase pointer pv3 ${h}_header`
                                 ).attr({
                                     colspan: config?.field_sizes && config.field_sizes[h] ? config.field_sizes[h] : 1
                                 }).html(
-                                    translate(h)
+                                    config?.special_headers && config.special_headers[h] ? config.special_headers[h] : translate(h)
                                 // ).attr({ contextevent: "table_header_menu_ev", field: h })//
                                 ).on('click', e => order_rows(h)))
                                 // ).on('click', e => fw.contextEvents.table_header_menu_ev(e.target, e)))
@@ -175,7 +197,7 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
                     TAG(`footer`, `row -counter`).append([
                         SPAN('/' + max_counter, 'right px mr', { opacity: .64 })
                         , SPAN('0', 'right px mr -enumerator')
-                        , SPAN('Núm. Resgistros:', 'right px', { opacity: .64 })
+                        , SPAN(translate('registers'), 'right px', { opacity: .64 })
                         , ...calculated_fields.map(cf => DIV('right flex mr2').append([
                             SPAN(translate(cf).replace('<br>', ' ') + ' (Σ):', 'px', { opacity: .64 })
                             , SPAN('-', cf + ' calc px -tolltip')
@@ -190,17 +212,17 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
         const container = stage.$('.table-body table')[0] ;;
         if(!config.append) container.$('tbody')?.remove();
         container.append([
-            ... config.rows?.map(item => {
-                const tr = TAG('tr', 'table-row-tr', { display: 'none' });;
+            ...config.rows.map(item => {
+                const tr = TAG('tr', 'row', { display: 'none' });;
                 if (config.allow_handlers) tr.append(
-                    TAG('td', 'rel', { width: '2em' }).append(
-                        DIV('centered pointer').append(
-                            TAG('input', 'pointer', { transform: 'scale(1.25)' }).attr({ type: 'checkbox' }).on('change', ev => ev.target.upFind('table-row')[ev.target.checked ? 'addClass' : 'remClass']('checked'))
+                    TAG('td', 'rel', { width: '2.5em' }).append(
+                        DIV('centered').append(
+                            TAG('input', 'pointer').attr({ type: 'checkbox' }).on('change', ev => ev.target.upFind('table-row')[ev.target.checked ? 'addClass' : 'remClass']('checked'))
                         )
                     )
                 )
                 cols.forEach((h, i) => {
-                    let e = TAG('td', `content-center px ${h}`).data({ field: h }).append(special_fields[h] ? special_fields[h](item[h], h, item) : SPAN(`${item[h] || ''}`)) ;;
+                    let e = TAG('td', `content-center px2 ${h}`).data({ field: h }).append(special_fields[h] ? special_fields[h](item[h], h, item) : SPAN(`${item[h] || ''}`)) ;;
                     try {
                         tr.append(e)
                     } catch (e) {
@@ -237,77 +259,84 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
 
     function load_filter_panel() {
 
-        if(!config.filters?.length) return fw.warning('No filters available')
+        if(!config.filters) return fw.warning('No filters found!')
 
-        loading.on()        
-        
-        const w = fw.window(
-            TAG('form', classname + ' row -filters').attr({ action: 'javascript:void(0)' }).append([
-                DIV('row px2').append([
-                    ... fw.iterate(0, Math.max(4, config.filters.length), i => {
-                        return ROW('flex px2').append([
-                            ... config.filters.slice(i, i + 4).map(filter_elements)
-                        ])
-                    }, 4)
-                ])
-                , ROW('px2 mt2').append([
-                    DIV('right relative circle pointer searcher px2 mx2 -tooltip mx4', {
-                        height: '4em'
-                        , width: '4em'
-                        , background: fw.palette.SPAN
-                        , color: fw.palette.WHITE
-                        , boxShadow: '0 0 1em ' + fw.palette.DARK3
-                    }).append(
-                        DIV('wrap rel').append(
-                            SPAN('search', 'icon centered avoid-pointer', { fontSize: '1.5em' })
-                        )
-                    ).on('click', ev => {
-                        loading.on()
-                        load_more = true
-                        const
-                        filters = {} 
-                        , tmp_filters = ev.target.upFind('-filters').json()
-                        ;;
-                        Object.entries(tmp_filters).forEach(([k, v]) => {
-                            if (!Array.isArray(v) && typeof v == 'object' && v.type == 'date') {
-                                if (v[k]) {
-                                    const operator = v.operator || '=' ;; 
-                                    filters[k] = [ v[k], null, operator ]
-                                }
-                            }
-                            else filters[k] = v
-                        })
-                        fw.storage(classname, JSON.stringify(filters))
-                        $(`.${classname} .active-filters`).at().empty().append(filter_pill(filters))
-                        search_ev(blend(config, { append: false }))
-                        w.close()
-                    }).attr({ tip: 'Filter results' })
-                    , DIV('left pointer pv4').append(
-                        SPAN(translate('clear filters'), 'ucase px4', { opacity: .64 })
-                    ).on('click', ev => {
-                        const stage = ev.target.upFind('-filters') ;;
-                        stage.$('._multiselect').forEach(i => i.erase())
-                        stage.$('input, select').forEach(i => i.getAttribute('type') != 'hidden' ? i.value = '' : null)
-                    })
-                ])
+        const stage = $(`.${classname} .-filter-stage`)[0] ;;
+        if(stage.$('._FiltersReady').length) return stage.toggleClass('hide')
+
+        const 
+        panel = TAG('form', classname + ' rel row -filters _FiltersReady').attr({ action: 'javascript:void(0)' }).append([
+            DIV('row px2 scrolls', { maxHeight: '64vh' }).append([
+                ... config.filters ? fw.iterate(0, config.filters.length, i => {
+                    return ROW('flex px2').append([
+                        ... config.filters.slice(i, i + 4).map(filter_elements)
+                    ])
+                }, 4) : []
             ])
-            , 'Filters'
-        ) ;;
+            , ROW('px2 mt2').append([
+                DIV('right relative circle pointer searcher px2 mx2 -tooltip', {
+                    height: '4em'
+                    , width: '4em'
+                    , background: fw.palette.SPAN
+                    , color: fw.palette.WHITE
+                    , boxShadow: '0 0 1em ' + fw.palette.DARK3
+                    , marginRight: '2em'
+                }).append(
+                    DIV('wrap rel', { transform: 'translateY(-.25em)'}).append(
+                        SPAN('search', 'icon centered avoid-pointer', { fontSize: '1.5em' })
+                    )
+                ).on('click', ev => {
+                    loading.on()
+                    load_more = true
+                    const
+                    filters = {} 
+                    , tmp_filters = ev.target.upFind('-filters').json()
+                    ;;
+                    Object.entries(tmp_filters).forEach(([k, v]) => {
+                        if (!Array.isArray(v) && typeof v == 'object' && v.type == 'date') {
+                            if (v[k]) {
+                                const operator = v.operator || '=' ;; 
+                                filters[k] = [ v[k], null, operator ]
+                            }
+                        }
+                        else filters[k] = v
+                    })
+                    fw.storage(classname, JSON.stringify(filters))
+                    fw.cache.filters = filters
+                    $(`.${classname} .active-filters`).at().empty().append(filter_pill(filters))
+                    search_ev(blend(config, { append: false }))
+                    $(`.${classname} .-filter-stage`)[0].addClass('hide')
+                }).attr({ tip: 'Filter results' })
+                , DIV('left pointer').append(
+                    SPAN(translate('clear filters'), 'ucase px4', { opacity: .64 })
+                ).on('click', ev => {
+                    const stage = ev.target.upFind('-filters') ;;
+                    stage.$('._multiselect').forEach(i => i.erase())
+                    stage.$('input, select').forEach(i => i.getAttribute('type') != 'hidden' ? i.value = '' : null)
+                })
+            ])
+        ])
+        ;;
+
+        stage.append(panel)
+        panel.remClass('hide')
 
         const 
         mselects = $(`.${classname} fmultiselect`)
         , mloader = new Loader(mselects.map(ms => ms.uid()))
         ;;
+
+        if(mselects.length) loading.on()
     
         mloader.onFinishLoading.add(_ => {
             multiselects()
             tooltips()
             tileEffect('.-filter')
             $(`.${classname} ._multiselect`).forEach(ms => ms.fill_label())
-            loading.off()
+            // loading.off()
         })
     
-        $(`.${classname} fmultiselect`).forEach(async ms => {
+        $(`.${classname} fmultiselect, .${classname} select`).forEach(async ms => {
             const 
             name = ms.getAttribute("name") 
             , cache_name = `/distinct/${name}`
@@ -323,7 +352,9 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
     
     function search_ev(config) {
 
+        if(config.append === false) load_more = true
         if(!load_more) return
+
         load_more = false
 
         const filters = {} ;;
@@ -331,7 +362,9 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
             filters[e.getAttribute('filter')] = e.getAttribute('tip').split(',')
         })
 
-        if(!config.append) {
+        fw.cache.filters = filters
+
+        if(!config.append){
             loading.on()
             post(`${uri}/count`, { data: { filters, strict: true } }).then(res => {
                 if(res) stage.$('.-counter > span.right')[0].text('/ ' + res)
@@ -341,22 +374,24 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
         return post(uri + '/rows', {
             data: { filters, offset: config.append ? $(`.${classname} .table-row`).length : 0, strict: true, limit: 200 }
             , callback: res => {
-                build_table(blend(config, { rows: res.rows }))
+                fw.cache.filters = filters
+                build_table(blend(config, { rows: res }))
                 show_rows.fire()
                 const
                 list = $(`.${classname} .table-row.show`)
                 , enumerator = $(`.${classname} .-enumerator`)[0]
                 ;;
-                fw.increment(enumerator, enumerator.innerText.replace(/[,.]+/gi, '') * 1 || 0, list.length, 1)
-                calculated_fields.forEach(cf => {
+                fw.increment(enumerator, 0, list.length, 1)
+                calculated_fields.forEach((cf, i) => {
                     const
-                    x = $(`.${classname} .table-row.show`)?.reduce((acc, row) => acc + (row.item[cf] && !isNaN(row.item[cf]) ? row.item[cf] * 1 : 0), 0)
-                    , e = $(`.${classname} .${cf}.calc`)[0]?.addClass('-tooltip').attr({ tip: x?.toFixed(1) || '0' })
+                    x = $(`.${classname} .table-row`)?.reduce((acc, row) => acc + (row.item[cf] && !isNaN(row.item[cf]) ? row.item[cf] * 1 : 0), 0)
+                    , e = $(`.${classname} .${cf}.calc`)[0]?.addClass('-tooltip').attr({ tip: (x*1).toFixed(1) || '0' })
                     ;;
-                    if (e !== undefined && x !== undefined) fw.increment(e, 0, x, 1, { nerd: true })
+                    // console.log({e, x})
+                    if (e !== undefined && x !== undefined) setTimeout(() => fw.increment(e, 0, x*1, 1, { fixed:3 }), AL + AL * i)
                 })
                 show_rows.fire()
-                load_more = Boolean(res.rows.length >= 200)
+                load_more = Boolean(res.length >= 200)
                 tooltips()
                 loading.off()
             }
@@ -380,11 +415,17 @@ if (!fw.components.tablejs) fw.components.tablejs = async (config, stage) => {
 
     const tjs = stage.$('.tablejs')[0] ;;
     tjs.order_rows = order_rows
-    tjs.search_ev = search_ev
+    tjs.refresh = search_ev
     tjs.build_table = build_table
     tjs.show_rows = show_rows
 
-    if(config.onFinishLoading) config.onFinishLoading(tjs)
+    // if(config.onFinished) config.onFinished(tjs)
+
+    load_filter_panel()
+
+    tjs.on('click', ev => {
+        if(!ev.target.upFind('tablejs-header')) $(`.${classname} .-filter-stage`)[0].addClass('hide')
+    })
     
     return tjs
 

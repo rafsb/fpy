@@ -1,5 +1,5 @@
 <template>
-    <div id="splash" class="fixed view zero blur" style="z-index:10000;background-color: {{background}}aa;"></div>
+    <div id="splash" class="fixed view zero blur -bg" style="z-index:10000;"></div>
     <script>
         const letters = [ 8, 10 ] ;;
         get(`img/sctech.svg`, res => {
@@ -13,20 +13,16 @@
                 DIV(`centered -logo content-center`).css({ pointerEvents: `none` }).append(
                     res
                 ).append([
-                    ROW('flex').append([
-                        DIV('col-3')
-                        , DIV('wd-6', { background: fw.palette.FONT + '22', bobrderRadius: '.5em' }).append(
+                    ROW('content-center').append(
+                        DIV('wd-6', { background: fw.palette.FONT + '22', bobrderRadius: '.5em' }).append(
                             DIV('left -progress').css({ background: fw.palette.C1, width: '0%', height: '.25em', borderRadius: '.25em' })	
                         )
-                        , DIV('col-3')
-                    ])
-                    , ROW('flex').append([
-                        DIV('col-3')
-                        , DIV('wd-6').append(
+                    )
+                    , ROW('content-center').append(
+                        DIV('wd-6').append(
                             DIV('row content-right pv2 ellipsis -progress-label', { color: fw.palette.FONT }).html('Loading...')
                         )
-                        , DIV('col-3')
-                    ])
+                    )
                 ])
             )
             res.$(`rect`).forEach((p, i) => {
@@ -88,6 +84,8 @@
                 window.loading.fire(true)
             }
         }
+
+        window.loading.on()
 
     </script>
 

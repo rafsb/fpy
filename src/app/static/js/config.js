@@ -49,7 +49,7 @@ blend(fw, {
     , onSocketBroadcast : new Pool()
     , contextEvents     : {}
     , notifications     : []
-    , app               : null
+    , app               : null 
 })
 
 const
@@ -250,5 +250,10 @@ window.onkeydown = e => {
     if(e.key == "Escape") {
         $('._menu').hide()
         $('._blured').hide()
+    }
+    if(e.ctrlKey){
+        if(e.key == "z") {
+            e.preventDefault()
+        }
     }
 }
