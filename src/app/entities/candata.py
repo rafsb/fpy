@@ -1,4 +1,4 @@
-from interfaces.table_traits import TableT
+from interfaces.table_traits import table_t
 
 
-class candata(TableT): pass
+class candata(table_t): pass

@@ -5,10 +5,10 @@
 # --------------------------------------------------------------------------------------------
 
 import os
-from models.mssql import mssql
+from models.mssql import mssql_m
 
 
-class mes(mssql):
+class mes(mssql_m):
 
     def __init__(self, tablename=None, server=None, database=None, username=None, password=None, driver=None):
 

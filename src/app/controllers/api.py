@@ -4,7 +4,7 @@ from jsonpickle import dumps, encode
 from hashlib import md5
 from entities.candata import candata
 from controllers.user import check_user
-from utils.cache import clear_cache, cache, CacheDB
+from utils.cache import clear_cache, cache, cache_db
 
 
 class api(): pass
@@ -47,7 +47,7 @@ def register(app, args=None):
 
     @app.get('/candata/distinct/<column>')
     def _candata_distinct(column):
-        cache = CacheDB('.distincts')
+        cache = cache_db('.distincts')
         res = cache.get(id=column)
         if res: return res
         res = candata().distincts(column=column, args=dict(**request.args) or {})

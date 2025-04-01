@@ -1,7 +1,7 @@
-from .basic_traits import ClassT
+from .basic_traits import class_t
 
 
-class Palette(ClassT):
+class palette_t(class_t):
 
     COLORS = {
         # Basic Colors
@@ -306,14 +306,14 @@ class Palette(ClassT):
     @staticmethod
     def get(color=None):
         if color:
-            return Palette.COLORS.get(color.upper(), Palette.COLORS['BLACK'])
+            return palette_t.COLORS.get(color.upper(), palette_t.COLORS['BLACK'])
         else:
-            return Palette.COLORS
+            return palette_t.COLORS
 
     @staticmethod
     def material(color=None, shade=500):
-        if color: return Palette.MATERIALS.get(color.upper(), Palette.MATERIALS['BLACK'])[str(shade)]
-        return Palette.MATERIALS
+        if color: return palette_t.MATERIALS.get(color.upper(), palette_t.MATERIALS['BLACK'])[str(shade)]
+        return palette_t.MATERIALS
 
     def no_hash(color=None):
-        return Palette.get(color).lstrip('#')
+        return palette_t.get(color).lstrip('#')

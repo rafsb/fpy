@@ -1,25 +1,25 @@
-from utils.basic_traits import ClassT, APIResponseT
-from utils.auth import auth, sessiondb
+from utils.basic_traits import class_t, api_response_t
+from utils.auth import auth, session_db
 from utils.log import log
 
 
-class User(ClassT):
+class User(class_t):
 
     def is_logged(username: str) -> bool:
-        res = APIResponseT(uat='')
+        res = api_response_t(uat='')
         if not username:
             msg = "Username not provided."
             log.error(msg)
             res.messages.append(msg)
             return res
         username = username.upper()
-        sess = sessiondb.get(username, cast=ClassT)
+        sess = session_db.get(username, cast=class_t)
         if not sess:
             msg = f"Session for {username} not found."
             log.error(msg)
             res.messages.append(msg)
             return res
-        bl = sessiondb.get('blacklist') or []
+        bl = session_db.get('blacklist') or []
         if username in bl:
             msg = f"User {username} is blacklisted."
             log.error(msg)
@@ -31,13 +31,13 @@ class User(ClassT):
         return res
 
     def login(username: str, password: str) -> bool:
-        res = APIResponseT(uat='')
+        res = api_response_t(uat='')
         if not username or not password:
             msg = "Username or password not provided when trying to login."
             log.error(msg)
             res.messages.append(msg)
             return res
-        bl = sessiondb.get('blacklist') or []
+        bl = session_db.get('blacklist') or []
         username = username.upper()
         if username in bl:
             msg = f"User {username} is blacklisted."
@@ -55,22 +55,22 @@ class User(ClassT):
         return res
 
     def logout(username: str) -> bool:
-        res = APIResponseT()
+        res = api_response_t()
         if not username:
             msg = "Username not provided when trying to logout."
             log.error(msg)
             return res
-        res.status = bool(sessiondb.destroy(username.upper()))
+        res.status = bool(session_db.destroy(username.upper()))
         return res
 
     def info(username: str) -> dict:
-        res = APIResponseT()
+        res = api_response_t()
         if not username:
             msg = "Username not provided when trying to get user info."
             log.error(msg)
             res.messages.append(msg)
         else:
-            try: res.data = sessiondb.get(username.upper(), cast=ClassT).user_data
+            try: res.data = session_db.get(username.upper(), cast=class_t).user_data
             except: res.messages.append('User not found.')
             res.status = bool(res.data)
         return res

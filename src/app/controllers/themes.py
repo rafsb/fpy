@@ -4,11 +4,11 @@ from json import loads as jout
 from flask import request
 from controllers.user import check_user, user
 from utils.log import log
-from utils.cache import LocalDB
-from utils.basic_traits import APIResponseT
+from utils.cache import local_db
+from utils.basic_traits import api_response_t
 
 THEMES_FOLDER = os.path.join(os.path.dirname(__file__), "..", "static", "themes")
-theme_db = LocalDB(".themes")
+theme_db = local_db(".themes")
 
 
 class themes :
@@ -58,7 +58,7 @@ def register(app, args=None):
     @app.route('/theme/save', methods=['GET', 'POST'])
     @check_user()
     def _theme_save():
-        res = APIResponseT()
+        res = api_response_t()
 
         try: us = user.logged(request.headers.get('Fw-Uat')).data['cn']
         except: return res.response(code=401, message="Unauthorized")

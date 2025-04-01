@@ -11,14 +11,14 @@ from hashlib import md5
 from datetime import datetime, date
 from models.mssql import MSSQL
 from utils.log import log
-from utils.basic_traits import ClassT, DBResponseT, StaticCast
+from utils.basic_traits import class_t, DBResponseT, static_cast
 from utils.cache import memcache
 
 
 DB_OPERATION_PACE = 512
 
 
-class DB_T(ClassT) :
+class db_t(class_t) :
 
     id = -1
     _kc = ['id']
@@ -46,7 +46,7 @@ class DB_T(ClassT) :
                 del kwargs[t[0]]
         super().__init__(**kwargs)
 
-    def conn_args(self: ClassT) -> tuple:
+    def conn_args(self: class_t) -> tuple:
         server = getattr(self, '_Server', os.environ.get("DB_SERVER"))
         db = getattr(self, '_Database', os.environ.get("DB_DATABASE"))
         key = getattr(self, '_Schema', os.environ.get("DB_SCHEMA"))
@@ -56,7 +56,7 @@ class DB_T(ClassT) :
     def count(self, filters=None, **args):
         sql = f"SELECT COUNT(*) AS count FROM {self.__class__.__name__.lower()}"
         if filters:
-            querystr, params = self.build_query(filters=filters, order=False)
+            querystr, params = self.build_query(filters=filters, **args)
             try: sql += f" WHERE {querystr.split(' WHERE ')[1]}"
             except:
                 sql += f" WHERE {querystr}"
@@ -82,7 +82,7 @@ class DB_T(ClassT) :
     def keys(self):
         return self._kc
 
-    def build_query(self, columns=None, filters=None, order=None, strict=True, offset=0, limit=-1):
+    def build_query(self, columns: list = None, filters: dict = None, order: str = None, strict: bool = True, offset: int = 0, limit: int = -1) -> tuple:
 
         _, db, key, table = self.conn_args()
         conditions = []
@@ -133,7 +133,7 @@ class DB_T(ClassT) :
             sql += " WHERE " + f" {'AND' if strict else 'OR'} ".join(conditions)
 
         sql += " ORDER BY " + ("(SELECT NULL)" if not order else f"[{order[0]}] {order[1]}") + " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY"
-        params.extend([offset or 0, limit or 100 if limit != -1 else 1000000])
+        params.extend([offset or 0, limit or 100 if limit != -1 else 100_000_000])
         return sql, params
 
     def connect(self, username=None, password=None, speedup=True):
@@ -178,7 +178,7 @@ class DB_T(ClassT) :
         except:
             log.error(traceback.format_exc())
             log.error(sql + '%s' % vals)
-        return res if res else ClassT(rowcount=0)
+        return res if res else class_t(rowcount=0)
 
     def fetch(self, columns=None, filters=None, order=None, strict=True, offset=None, limit=-1):
         """
@@ -201,6 +201,31 @@ class DB_T(ClassT) :
         sql, params = self.build_query(columns=columns, filters=filters, order=order, strict=strict, offset=offset, limit=limit)
         return self.execute(sql, params)
 
+    def iterate(self, chunksize=1024, **args):
+        cursor = self.connect()[0]
+
+        offset = 0
+
+        count = self.count(**args)
+        args['limit'] = count
+
+        columns = self.columns()
+
+        query = self.build_query(**args)
+        cursor.execute(query[0], query[1])
+
+        while True:
+            res = cursor.fetchmany(chunksize)
+            if not res:
+                break
+            for item in res:
+                offset += 1
+                item = self.__class__(**dict(zip(columns, item)))
+                yield item, offset, count
+
+    def select(self, columns=None, filters=None, order=None, strict=True, offset=None, limit=-1):
+        return self.fetch(columns=columns, filters=filters, order=order, strict=strict, offset=offset, limit=limit)
+
     def row_key(self, char=';', encrypt=False):
         _k = []
         for k in self._kc:
@@ -218,11 +243,11 @@ class DB_T(ClassT) :
             if key != "id" :
                 val = attrs.get(key, '')
                 if val in [None, 0, '', False]: val = ''
-                if isinstance(val, str): temp_str.append("%s:%s" % (key, StaticCast.str(val, clear=True)))
-                elif isinstance(val, int): temp_str.append("%s:%d" % (key, StaticCast.int(val)))
-                elif isinstance(val, float): temp_str.append("%s:%d" % (key, StaticCast.float(val)))
-                elif isinstance(val, datetime): temp_str.append("%s:%s" % (key, val.strftime(StaticCast.LONG_DATE)))
-                elif isinstance(val, date): temp_str.append("%s:%s" % (key, val.strftime(StaticCast.SHORT_DATE)))
+                if isinstance(val, str): temp_str.append("%s:%s" % (key, static_cast.str(val, clear=True)))
+                elif isinstance(val, int): temp_str.append("%s:%d" % (key, static_cast.int(val)))
+                elif isinstance(val, float): temp_str.append("%s:%d" % (key, static_cast.float(val)))
+                elif isinstance(val, datetime): temp_str.append("%s:%s" % (key, val.strftime(static_cast.LONG_DATE)))
+                elif isinstance(val, date): temp_str.append("%s:%s" % (key, val.strftime(static_cast.SHORT_DATE)))
         temp_str = re.sub(r"\s+", "", '|'.join(temp_str)).strip()
         # return md5((''.join(temp_str)).encode('utf-8')).hexdigest()
         # return sha256((''.join(temp_str)).encode("utf-8")).hexdigest()
@@ -281,14 +306,14 @@ class DB_T(ClassT) :
     @staticmethod
     def static_exec(sql, vals=None):
         res = None
-        tmp = DB_T()
+        tmp = db_t()
         tmp.connect()
         try:
             if vals: res = tmp._Cursor.execute(sql, *vals)
             else: res = tmp._Cursor.execute(sql)
             if getattr(tmp._Cursor, 'description'):
                 column_names = [ column[0] for column in tmp._Cursor.description ]
-                res = list(map(lambda x: ClassT(**dict(zip(column_names, x))), res))
+                res = list(map(lambda x: class_t(**dict(zip(column_names, x))), res))
             else: column_names = []
         except: log.error(traceback.format_exc())
         return DBResponseT(cols=column_names, rows=res)

@@ -15,7 +15,7 @@ from datetime import datetime, date
 from hashlib import sha256
 
 
-class ClassT(object):
+class class_t(object):
 
     _kc = []
     _bl = []
@@ -81,16 +81,16 @@ class ClassT(object):
             if key != "id" :
                 val = attrs.get(key, '')
                 if val in [None, 0, '', False]: val = ''
-                if isinstance(val, str): temp_str.append("%s:%s" % (key, StaticCast.str(val, clear=True)))
-                elif isinstance(val, int): temp_str.append("%s:%d" % (key, StaticCast.int(val)))
-                elif isinstance(val, float): temp_str.append("%s:%d" % (key, StaticCast.float(val)))
-                elif isinstance(val, datetime): temp_str.append("%s:%s" % (key, val.strftime(StaticCast.LONG_DATE)))
-                elif isinstance(val, date): temp_str.append("%s:%s" % (key, val.strftime(StaticCast.SHORT_DATE)))
+                if isinstance(val, str): temp_str.append("%s:%s" % (key, static_cast.str(val, clear=True)))
+                elif isinstance(val, int): temp_str.append("%s:%d" % (key, static_cast.int(val)))
+                elif isinstance(val, float): temp_str.append("%s:%d" % (key, static_cast.float(val)))
+                elif isinstance(val, datetime): temp_str.append("%s:%s" % (key, val.strftime(static_cast.LONG_DATE)))
+                elif isinstance(val, date): temp_str.append("%s:%s" % (key, val.strftime(static_cast.SHORT_DATE)))
         temp_str = re.sub(r"\s+", "", '|'.join(temp_str)).strip()
         return sha256((''.join(temp_str)).encode("utf-8")).hexdigest() if hash else temp_str
 
     def diff(self, obj, ignore=[]):
-        if not isinstance(obj, ClassT): return True
+        if not isinstance(obj, class_t): return True
         res = {}
         ignore = ignore or []
         for k, v in self.attrs(bl=ignore).items():
@@ -138,12 +138,12 @@ class ClassT(object):
     @staticmethod
     def from_str(s):
         try:
-            return ClassT(**json.decode(s))
+            return class_t(**json.decode(s))
         except Exception:
-            return ClassT()
+            return class_t()
 
 
-class SingletonT(ClassT):
+class SingletonT(class_t):
 
     _instances = {}
 
@@ -153,7 +153,7 @@ class SingletonT(ClassT):
         return cls._instances[cls]
 
 
-class DBResponseT(ClassT):
+class DBResponseT(class_t):
 
     def __init__(self, cols=[], rows=[], **args):
         self.cols = cols
@@ -167,7 +167,7 @@ class DBResponseT(ClassT):
             return {"cols": self.cols, "rows": self.rows}
 
 
-class APIResponseT(ClassT):
+class api_response_t(class_t):
 
     def make_response(self, code=200, message=None):
         if message:
@@ -180,7 +180,7 @@ class APIResponseT(ClassT):
 
     @staticmethod
     def gen_response(status: bool = True, message: str = None, data: any = None, code: int = 200):
-        self = APIResponseT()
+        self = api_response_t()
         self.status = status
         if message: self.messages.append(message)
         if data: self.data = data
@@ -193,7 +193,7 @@ class APIResponseT(ClassT):
         if not args.get('messages'): self.messages = []
 
 
-class StaticCast:
+class static_cast:
 
     SAP_DATE = "%d.%m.%Y"
     BR_DATE = "%d/%m/%Y"
@@ -212,7 +212,7 @@ class StaticCast:
 
     @staticmethod
     def float(n):
-        n = StaticCast.str(n)
+        n = static_cast.str(n)
         try:
             n = float(n)
         except:
@@ -224,7 +224,7 @@ class StaticCast:
 
     @staticmethod
     def int(n):
-        n = StaticCast.str(n)
+        n = static_cast.str(n)
         try:
             return 0 if not n else int(n.replace(".", "").replace(",", "."))
         except Exception:
@@ -237,7 +237,7 @@ class StaticCast:
 
         s (str | date | datetime):
             The input to be converted. It can be a string representing a date,
-            in ay of the predefined formats included on the StaticCast class,
+            in ay of the predefined formats included on the static_cast class,
             a date object, or a datetime object.
 
         time (bool, optional):
@@ -256,7 +256,7 @@ class StaticCast:
         if isinstance(s, (datetime, date)):
             return datetime.combine(s, datetime.min.time()) if not time else datetime.combine(s, datetime.now().time())
         date_formats = []
-        static_cast_dict = StaticCast.__dict__
+        static_cast_dict = static_cast.__dict__
         for k in static_cast_dict:
             if not k.startswith('_') and not callable(static_cast_dict[k]) and isinstance(static_cast_dict[k], str):
                 date_formats.append(static_cast_dict[k])

@@ -1,7 +1,5 @@
 import os
-from json import loads as jout
 from flask import request
-from utils.log import log
 
 
 WALLPAPERS_FOLDER = os.path.join(os.path.dirname(__file__), "..", "static", "img", "wallpapers")

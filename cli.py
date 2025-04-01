@@ -14,7 +14,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'src', '
 
 load_dotenv(verbose=True, override=True)
 ENV = os.getenv('ENV', 'PROD')
-PORT = os.getenv('PORT', 80)
 
 STATIC_D     = 'src/app/static/'
 CONTROLLER_D = 'src/app/controllers'
@@ -50,6 +49,9 @@ if __name__ == "__main__":
     # AUTOLOADER
     args = sys.argv[1:]
     file = os.path.join(ROOT, CONTROLLER_D, args[0] + '.py')
+
+    from utils.log import log
+    log.debug(f"CLI: {args}")
 
     if os.path.isfile(file):
         try:

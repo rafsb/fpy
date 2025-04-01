@@ -8,7 +8,7 @@ import os
 import re
 import sqlite3
 import traceback
-from utils.basic_traits import ClassT
+from utils.basic_traits import class_t
 from utils.log import log
 
 
@@ -36,20 +36,20 @@ class SQLiteDB:
             cursor = self.connection.cursor()
             cursor.execute(query)
             self.connection.commit()
-            return ClassT(status=True, res=cursor)
+            return class_t(status=True, res=cursor)
         except:
             log.error(f"Error executing query: {traceback.format_exc()}")
-            return ClassT(status=False, res=None)
+            return class_t(status=False, res=None)
 
     def fetch(self, query):
         try:
             cursor = self.connection.cursor()
             cursor.execute(query)
             res = cursor.fetchall()
-            return ClassT(status=True if len(res) > 0 else False, res=res)
+            return class_t(status=True if len(res) > 0 else False, res=res)
         except:
             log.error(f"Error fetching records: {traceback.format_exc()}")
-            return ClassT(status=False, res=None)
+            return class_t(status=False, res=None)
 
     def upsert(self, entity):
         res = self.query(entity.update_query())
@@ -84,14 +84,14 @@ class SQLiteDB:
 
             cursor.execute("COMMIT;")
             cursor.execute("PRAGMA foreign_keys = ON;")
-            return ClassT(status=True, res=None)
+            return class_t(status=True, res=None)
         except:
             log.error(f"Error clearing the database: {traceback.format_exc()}")
-            return ClassT(status=False, res=None)
+            return class_t(status=False, res=None)
 
     def init_database(self, filename='init_database.sql'):
         res = []
-        filepath = os.path.join(os.path.dirname(__file__), '..', '..', 'etc', filename)
+        filepath = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'etc', filename)
         if os.path.exists(filepath):
             self.clear_database()
             with open(filepath, 'r') as file:

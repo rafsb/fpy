@@ -1,12 +1,9 @@
 venv/
 env/
-cache/
-**/__pycache__/
+var/
 tmp/
+site-packages/
+**/__pycache__/
 *.pyc
 *.xlsx
-src/lib/utils/__pycache__/basic_traits.cpython-312.pyc
-site-packages/
 .env
-src/var/tmp/
-src/var/db/

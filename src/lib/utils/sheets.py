@@ -1,7 +1,7 @@
 from openpyxl import load_workbook, styles, Workbook
 
-from utils.basic_traits import ClassT
-from utils.palette import Palette
+from utils.basic_traits import class_t
+from utils.palette import palette_t
 
 fmt_date = styles.NamedStyle(name='fmt_date')
 fmt_date.number_format = 'dd/mm/yyyy'
@@ -36,7 +36,7 @@ datetimes = [
 ]
 
 
-class sheets(ClassT):
+class sheets(class_t):
 
     @staticmethod
     def color_gradient(color, grad=1, theme='light'):
@@ -111,7 +111,7 @@ class sheets(ClassT):
             cell.alignment = styles.Alignment(horizontal=align, vertical='center')
 
         if not value:
-            cell.font = styles.Font(color=Palette.get('DISABLED').lstrip('#').upper(), size=9)
+            cell.font = styles.Font(color=palette_t.get('DISABLED').lstrip('#').upper(), size=9)
         elif font:
             cell.font = styles.Font(color=font.lstrip('#').upper(), size=9)
 
@@ -168,7 +168,7 @@ class sheets(ClassT):
 
         # Fill header row
         for i, h in enumerate(cols, start=1):
-            self.assign(sheet, 1, i, h, fill=Palette.get('candy_gray'), align='center')
+            self.assign(sheet, 1, i, h, fill=palette_t.get('candy_gray'), align='center')
 
         # Fill data rows
         for i, item in enumerate(data, start=2):

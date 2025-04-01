@@ -1,5 +1,5 @@
 # --------------------------------------------------------------------------------------------
-# MSSQL model class to handle database operations
+# mssql_m model class to handle database operations
 # --------------------------------------------------------------------------------------------
 # Author: Rafael Bertolini
 # --------------------------------------------------------------------------------------------
@@ -8,11 +8,11 @@ import os
 import re
 import pyodbc
 import traceback
-from utils.basic_traits import ClassT
+from utils.basic_traits import class_t
 from utils.log import log
 
 
-class MSSQL:
+class mssql_m:
     _Server = os.getenv("DB_SERVER")
     _Database = os.getenv("DB_DATABASE")
     _Username = os.getenv("DB_USERNAME")
@@ -45,20 +45,20 @@ class MSSQL:
             cursor = self.connection.cursor()
             res = cursor.execute(query)
             self.connection.commit()
-            return ClassT(status=True, res=res)
+            return class_t(status=True, res=res)
         except:
             log.error(message=f"Error executing query: {traceback.format_exc()}")
-            return ClassT(status=False, res=None)
+            return class_t(status=False, res=None)
 
     def fetch(self, query):
         try:
             cursor = self.connection.cursor()
             cursor.execute(query)
             res = cursor.fetchall()
-            return ClassT(status=True if len(res) > 0 else False, res=res)
+            return class_t(status=True if len(res) > 0 else False, res=res)
         except:
             log.error(f"Error fetching records: {traceback.format_exc()}")
-            return ClassT(status=False, res=None)
+            return class_t(status=False, res=None)
 
     def upsert(self, entity):
         res = self.query(entity.update_query())
@@ -87,7 +87,7 @@ class MSSQL:
 
     def init_database(self, filename='init_database.sql'):
         res = []
-        filepath = os.path.join(os.path.dirname(__file__), '..', '..', 'etc', filename)
+        filepath = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'etc', filename)
         if os.path.exists(filepath):
             self.clear_database()
             with open(filepath, 'r') as file:

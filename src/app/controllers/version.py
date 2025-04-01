@@ -1,14 +1,11 @@
 import os
 
 
-APP_VERSION = os.getenv("APP_VERSION", "0.0-rolling")
-
-
 class version:
 
     @staticmethod
     def init():
-        return APP_VERSION
+        return os.getenv("APP_VERSION", "0.0-rolling")
 
 
 def register(app, args=None) :

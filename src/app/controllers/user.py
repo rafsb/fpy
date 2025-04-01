@@ -1,6 +1,6 @@
 from flask import request
 from entities.users import User as entity
-from utils.basic_traits import StaticCast, APIResponseT, ClassT
+from utils.basic_traits import static_cast, api_response_t, class_t
 from utils.log import log
 
 AD_PREFIX = 'NADC1_MGT_'
@@ -16,13 +16,13 @@ class user():
 
     @staticmethod
     def uat_user(uat=None):
-        res = APIResponseT()
+        res = api_response_t()
         if not uat:
             msg = 'No user token found'
             log.error(msg)
             res.messages.append(msg)
             return res
-        try: user = StaticCast.decrypt(uat)[1:].split('.')[0]
+        try: user = static_cast.decrypt(uat)[1:].split('.')[0]
         except: user = None
         if not user:
             msg = 'Invalid user token'
@@ -38,7 +38,7 @@ class user():
         if not user or not password:
             msg = 'Missing user or password'
             log.error(msg)
-            return APIResponseT(messages=[msg])
+            return api_response_t(messages=[msg])
         return entity.login(user, password)
 
     @staticmethod
@@ -77,7 +77,7 @@ def check_user(memberof=None):
 
                 # Extract user info
                 user_cn = res.data.get('cn', '').upper()
-                member_of_groups = [x.upper() for x in ClassT.nested(res.data, ['memberOf', 'CN' ], [])]
+                member_of_groups = [x.upper() for x in class_t.nested(res.data, ['memberOf', 'CN' ], [])]
                 # Gather allowed users from all groups
                 allowed_people = sum([allowed_users.get(AD_PREFIX + group.upper(), []) for group in memberof], []) + allowed_users.get(f'{AD_PREFIX}OPS-ADM', [])
                 allowed_people = [x.upper() for x in allowed_people]
@@ -88,7 +88,7 @@ def check_user(memberof=None):
                 ):
                     msg = 'User is not authorized to access this resource (%s)' % user_cn
                     log.error(msg)
-                    return APIResponseT(status=False, messages=list(set([msg] + res.messages))).attrs()
+                    return api_response_t(status=False, messages=list(set([msg] + res.messages))).attrs()
 
             return fn(*args, **kwargs)
 

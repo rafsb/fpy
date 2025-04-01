@@ -9,9 +9,9 @@
 import os
 import jsonpickle
 from datetime import datetime
-from utils.basic_traits import ClassT
+from utils.basic_traits import class_t
 
-ELevels = ClassT(**{
+ELevels = class_t(**{
     'NONE'      : 9
     , 'CRITICAL': 6
     , 'FATAL'   : 5
@@ -26,7 +26,7 @@ VERBOSE = getattr(ELevels, os.getenv("VERBOSE", 'ALL'), 'ALL')
 LOG_LEVEL = getattr(ELevels, os.getenv("LOG_LEVEL", 'WARN'), 'WARN')
 
 
-class Logger:
+class custom_logger:
 
     def __init__(self, max_lines=1024):
 
@@ -34,7 +34,7 @@ class Logger:
         self.LOG_LEVEL = LOG_LEVEL
 
         self.max_lines = max_lines
-        self.log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'var', 'tmp', 'logs'))
+        self.log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', 'var', 'tmp', 'logs'))
         os.makedirs(self.log_dir, exist_ok=True)
 
         # Debug statement to check log directory
@@ -91,4 +91,4 @@ class Logger:
         return cls(**args)
 
 
-log = Logger()
+log = custom_logger()

@@ -11,15 +11,15 @@ import traceback
 from flask import request
 from datetime import datetime
 from threading import Lock
-from utils.basic_traits import ClassT
+from utils.basic_traits import class_t
 from utils.log import log
 
 
 CACHE_LIFESPAN = float(os.getenv('CACHE_LIFESPAN', 120))
-CACHE_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "var", "db")
+CACHE_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "var", "db")
 
 
-class CacheDB(ClassT):
+class cache_db(class_t):
 
     persist: bool
 
@@ -143,7 +143,7 @@ class CacheDB(ClassT):
                 callback(True, None)
 
 
-class LocalDB(CacheDB):
+class local_db(cache_db):
 
     persist = True
 
@@ -151,7 +151,7 @@ class LocalDB(CacheDB):
         super().__init__(db_name=db_name, persist=True)
 
 
-class MemDB(ClassT):
+class MemDB(class_t):
 
     _db = {}
 
@@ -208,7 +208,7 @@ def clear_cache(caches=None, pattern=None, id=None, engine=None):
                 engine.destroy(filename)
 
 
-def CACHE(id: str = None, lifespan: int = CACHE_LIFESPAN, engine: ClassT = None) -> callable:
+def CACHE(id: str = None, lifespan: int = CACHE_LIFESPAN, engine: class_t = None) -> callable:
     if not engine: engine = cache
 
     def decorator(fn: callable) -> callable:
@@ -228,6 +228,6 @@ def CACHE(id: str = None, lifespan: int = CACHE_LIFESPAN, engine: ClassT = None)
     return decorator
 
 
-cache = CacheDB(db_name=".cache")
-localstore = LocalDB(db_name=".local")
+cache = cache_db(db_name=".cache")
+localstore = local_db(db_name=".local")
 memcache = MemDB()

@@ -1,7 +1,7 @@
 """
 table_traits.py
 
-This module defines the TableT class, which inherits from DB_T and provides
+This module defines the table_t class, which inherits from db_t and provides
 various database operations for table-like structures. It includes methods for
 bulk operations (insert, update, delete), query generation, and utility functions
 for database management.
@@ -22,7 +22,7 @@ import os
 import re
 import traceback
 
-from interfaces.db import DB_T
+from interfaces.db import db_t
 from utils.gauge import gauge
 from utils.log import log
 
@@ -31,13 +31,13 @@ from utils.log import log
 DB_OPERATION_PACE = os.getenv("DB_OPERATION_PACE", 512)
 
 
-# View class, inheriting from DB_T
-class ViewT(DB_T):
+# View class, inheriting from db_t
+class view_t(db_t):
     _bl = ['id']
 
 
-# Table class, inheriting from DB_T
-class TableT(DB_T):
+# Table class, inheriting from db_t
+class table_t(db_t):
 
     id = -1
 
@@ -52,8 +52,8 @@ class TableT(DB_T):
         Perform a bulk insert operation for multiple rows.
         """
         res = 0
-        classtype = type(self)
-        classname = classtype.__name__.lower()
+        class_type = type(self)
+        classname = class_type.__name__.lower()
         columns = [x for x in self.columns() if x not in self.blacklisted()]
         if len(columns) == 0: columns = rows[0].keys()
         items = []
@@ -369,7 +369,7 @@ class TableT(DB_T):
         return self
 
 
-class TableT(TableT): pass
+class table_t(table_t): pass
 
 
-class ViewT(ViewT): pass
+class view_t(view_t): pass

@@ -1,6 +1,6 @@
 import re
 from datetime import datetime as dt
-from .basic_traits import StaticCast
+from .basic_traits import static_cast
 
 
 class Format():
@@ -39,7 +39,7 @@ class Format():
         except Exception:
             return 0
 
-    def date(s, fmt=StaticCast.SHORT_DATE):
+    def date(s, fmt=static_cast.SHORT_DATE):
         """Convert a string to a datetime object if the year is greater than 1900."""
         try:
             d = dt.strptime(str(s).strip(), fmt)

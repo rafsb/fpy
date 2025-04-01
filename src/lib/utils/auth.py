@@ -12,29 +12,29 @@ from ldap3 import Connection, Server, NTLM, ALL
 from hashlib import sha256
 from datetime import datetime
 from json import loads
-from utils.basic_traits import ClassT, StaticCast
+from utils.basic_traits import class_t, static_cast
 from utils.log import log
-from utils.cache import CacheDB
+from utils.cache import cache_db
 
 
-sessiondb = CacheDB('session')
+session_db = cache_db('session')
 
 
 def auth(username, password, lifespan=60 * 24):
 
     username = username.upper()
 
-    res = sessiondb.get(username)
-    if res and isinstance(res, ClassT) and res.status and sha256(password.encode()).hexdigest() == res.password:
+    res = session_db.get(username)
+    if res and isinstance(res, class_t) and res.status and sha256(password.encode()).hexdigest() == res.password:
         res.last_login = datetime.now().isoformat()
-        res.uat = StaticCast.encrypt(f"^{res.user_data['cn']}.{res.last_login}$")
-        sessiondb.set(username, res, expires=lifespan)
+        res.uat = static_cast.encrypt(f"^{res.user_data['cn']}.{res.last_login}$")
+        session_db.set(username, res, expires=lifespan)
         return res
 
     AD_SERVER = os.getenv('AD_SERVER')
     AD_DOMAIN = os.getenv('AD_DOMAIN')
 
-    res = ClassT(
+    res = class_t(
         status=False
         , user_data=None
         , messages=[]
@@ -79,7 +79,7 @@ def auth(username, password, lifespan=60 * 24):
                 tmp.setdefault(key, set()).add(value)
             res.user_data["memberOf"] = {key: list(map(lambda x: x.split(',')[0], list(value))) for key, value in tmp.items()}
             res.password = sha256(password.encode()).hexdigest()
-            res.uat = StaticCast.encrypt(f"^{res.user_data['cn']}.{res.last_login}$")
+            res.uat = static_cast.encrypt(f"^{res.user_data['cn']}.{res.last_login}$")
             res.messages.append("User information retrieved successfully.")
             res.status = True
         else:
@@ -87,5 +87,5 @@ def auth(username, password, lifespan=60 * 24):
         conn.unbind()
     except Exception as e:
         log.error(f"Error during authentication: {e}")
-    sessiondb.set(username, res, expires=lifespan)
+    session_db.set(username, res, expires=lifespan)
     return res
