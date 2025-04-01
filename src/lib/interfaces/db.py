@@ -9,7 +9,7 @@ import re
 import traceback
 from hashlib import md5
 from datetime import datetime, date
-from models.mssql import MSSQL
+from models.mssql import mssql_m
 from utils.log import log
 from utils.basic_traits import class_t, DBResponseT, static_cast
 from utils.cache import memcache
@@ -23,7 +23,7 @@ class db_t(class_t) :
     id = -1
     _kc = ['id']
     _bl = ['id']
-    _Driver = MSSQL
+    _Driver = mssql_m
     _Server = os.environ.get("DB_SERVER")
     _Database = os.environ.get("DB_DATABASE")
     _Schema  = os.environ.get("DB_SCHEMA")

@@ -1461,7 +1461,7 @@ class fw {
         let { args, target, bind } = (config || {}) ;;
         return fw.call(url, args).then(r => {
             if (!r?.res) return fw.error("error loading " + url);
-            r = r.res.prepare(blend(fw.palette, bind)).morph()
+            r = r.res.prepare(bind).morph()
             if (!target) target = document.body
             function insert(h) {
                 if(h instanceof HTMLCollection) Array.from(h).forEach(insert)
@@ -1631,7 +1631,7 @@ class fw {
         mob = fw.is_mobile()
         , head = TAG("header", "relative row zero -window-header no-scrolls ph").append([
             DIV("left content-left ellipsis no-scrolls -drag-trigger", { cursor: 'all-scroll', height: "2em", width: "calc(100% - 6em)" }).append(
-                typeof title == "string" ? ("<div class='row px2 no-scrolls' style='opacity:.64'>" + title + "</div>").morph()[0] : title
+                typeof title == "string" ? ("<span class='row px2 no-scrolls' style='opacity:.64'>" + title + "</span>").morph()[0] : title
             ).on("click", function () { this.upFind("-window").raise() }),
             // CLOSE
             DIV("relative right pointer -close tile", { height: `2em`, width: `2em` }).append(
@@ -1702,7 +1702,6 @@ class fw {
         , wrapper = DIV("wrap relative content", { height: "calc(100% - 2em)" })
         , _W = TAG("div", "fixed p0 m0 blur -drag-target -window", blend({
             height: mob ? "100vh" : "auto"
-            , minHeight: mob ? "100vh" : "6em"
             , maxHeight: "100vh"
             , width: mob ? "100vw" : "64vw"
             , maxWidth: "100vw"

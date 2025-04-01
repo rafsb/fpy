@@ -42,14 +42,15 @@
                     post('auth/in', { 
                         data
                         , callback: res => {
+                            console.log({ res })
                             loading.off()
                             if(res.status) {
                                 fw.uat = fw.storage('uat', res.uat)
                                 ev.target.upFind('login').remove()
-                                d.dispatchEvent(new Event('success'))
+                                d.emit('success')
                             } else {
                                 fw.uat = fw.storage('uat', "")
-                                d.dispatchEvent(new Event('failure'))
+                                d.emit('failure')
                             }
                         } 
                     })

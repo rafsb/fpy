@@ -9,7 +9,7 @@
 */
 ANIMATION_LENGTH  = 400
 AL 				  = ANIMATION_LENGTH
-APP_DEFAULT_THEME = "light"
+APP_DEFAULT_THEME = "dark"
 APP_NEEDS_LOGIN   = false
 VERBOSE           = false
 
@@ -162,7 +162,7 @@ get(`version`, response => {
                     )
                     document.getElementsByTagName('head')[0].appendChild(TAG('style').text("\
                         input,[type='text'],[type='search'],[type='number'],[type='button'],[type='submit'],select,textarea,button {\
-                            background: {{foreground}};\
+                            background: {{foreground}}aa;\
                             border: 1px solid {{font}}44;\
                             color: {{font}}\
                         }\

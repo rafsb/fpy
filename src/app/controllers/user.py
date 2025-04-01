@@ -88,7 +88,7 @@ def check_user(memberof=None):
                 ):
                     msg = 'User is not authorized to access this resource (%s)' % user_cn
                     log.error(msg)
-                    return api_response_t(status=False, messages=list(set([msg] + res.messages))).attrs()
+                    return api_response_t(status=False, messages=list(set([msg] + res.messages))).make_response(code=403)
 
             return fn(*args, **kwargs)
 
@@ -104,17 +104,16 @@ def register(app, args=None):
     def _auth_sign():
         data = request.json
         res = user.login(data.get('username'), data.get('password'))
-        return res.attrs()
+        return res.render()
 
     @app.route('/auth/out', methods=['POST', 'GET'])
     def _auth_logout():
         uat = request.headers.get('Fw-Uat')
         res = user.logout(uat)
-        return res.attrs()
+        return res.render()
 
-    @app.route('/user/info', methods=['POST', 'GET'])
+    @app.route('/auth/info', methods=['POST', 'GET'])
     def _auth_info():
         uat = request.headers.get('Fw-Uat')
         res = user.info(uat)
-        print(res)
-        return res.make_response()
+        return res.render()

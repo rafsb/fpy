@@ -169,14 +169,14 @@ class DBResponseT(class_t):
 
 class api_response_t(class_t):
 
-    def make_response(self, code=200, message=None):
+    def make_response(self, code=None, message=None):
         if message:
             self.messages.append(message)
         self.messages = list(set(self.messages))
-        return self.attrs(), code if self.status else 402
+        return self.attrs(), (code or 200) if self.status else 401
 
-    def response(self, code=200, message=None):
-        return self.make_response(code, message)
+    def render(self, code=None, message=None):
+        return self.make_response(code=code, message=message)
 
     @staticmethod
     def gen_response(status: bool = True, message: str = None, data: any = None, code: int = 200):

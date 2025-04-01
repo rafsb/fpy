@@ -22,16 +22,6 @@
             
             </div>
 
-            <div class="ph4 row anchor content-left">
-
-                <h1>TableJS</h1>
-
-                <p>TableJS is a simple and easy to use table generator that uses the framework to create and manage tables with a few lines of code and a simple and easy to use approach.</p>
-
-                <div class="row table-stage" style="height:40vh"></div>
-
-            </div>
-
         </main>
     </div>
     <style>
@@ -49,10 +39,11 @@
             bt.anime({ background: '{{span}}'})
             bt.$('.icon')[0].text('passkey')
             $('#fe .code')[0].text('User not logged in, please login using the form.')
+            fw.uat = fw.storage('uat', false)
             fw.exec('components/login').then(el => {
                 el.res.on('success', ev => {
                     fw.success()
-                    get('user', res => res.status ? userIsLogged(res) : userIsNotLogged(res))
+                    get('auth/info', userIsLogged)
                 })
                 el.res.on('error', ev => {
                     fw.error()
@@ -73,7 +64,7 @@
                 , ... Object.entries(res.data.memberOf).map(([global, groups]) => DIV('row content-left').html('groups....:<br>+'+global+'/'+groups.join('<br>+'+global+'/')))
                 , DIV('row content-left').append(
                     DIV('pointer px', { color: '{{candy_red}}' }).text('>> logout <<').on('click', ev => {
-                        get('logout', res => {
+                        get('auth/out', res => {
                             fw.success(res.messages)
                             userIsNotLogged({ status: false })
                         })
@@ -83,40 +74,7 @@
             tooltips()
         }
 
-        $('#fe .check-user').on('click', ev => {
-            get('user', res => res.status ? userIsLogged(res) : userIsNotLogged(res))
-        })
+        $('#fe .check-user').on('click', ev => get('auth/info', userIsLogged))
 
-        // Showing different ways to use the tablejs component
-        // by customizing the fields and adding calculated fields
-
-        // Function to format float values
-        function as_float(value, key, item, round=2) {
-            return SPAN((value * 1).toFixed(round).replace(',', '').replace('.', ','), 'row content-right -tooltip').attr({
-                tip: `${key} - R$ ` + value.toFixed(round).replace('.', ',') 
-            })
-        }
-
-        fw.components.tablejs({
-            // the endpoint shall have: candata/cols, candata/rows
-            // and candata/count to work properly
-            endpoint: 'candata'
-            // the table will be rendered in the element with the class table-stage
-            // and will contain filters as follows, the types are: 
-            // multiselect, select and date, empty types is free text search
-            , filters: [
-                { name: 'can_code', type: 'multiselect' }
-                , { name: 'size', type: 'multiselect' }
-            ]
-            // the table will have the following columns parsed by the functions
-            // on this section, the special_fields will be used to parse the data
-            , special_fields: {
-                vehicle_qty: as_float
-                , pallet_qty: (v, k, i) => as_float(v, k, i, 3)
-                , total: (v, k, item) => as_float(item.car_pallets * item.pallet_qty, k, item, 2)
-            }
-            // and the calculated_fields will be used to calculate the data
-            , calculated_fields: [ 'vehicle_qty' ]
-        }, $('#fe .table-stage')[0])
     </script>
 </template>

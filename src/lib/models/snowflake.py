@@ -10,8 +10,6 @@ import snowflake.connector  # type: ignore
 from models.mssql import mssql_m
 from utils.log  import log
 
-VERBOSE = int(os.getenv("VERBOSE", 0))
-
 
 class sf(mssql_m):
 

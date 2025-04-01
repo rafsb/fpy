@@ -4,9 +4,9 @@
     , "FONT"        : "#1a1a1a"
     , "SPAN"        : "#002776"
     , "C1"          : "#002776"
-    , "C2"          : "#009b3a"
+    , "C2"          : "#ffdf00"
     , "C3"          : "#7fbd1d"
-    , "C4"          : "#ffdf00"
+    , "C4"          : "#009b3a"
     , "type"        : "light"
     , "theme_name"  : "brazil"
 }
